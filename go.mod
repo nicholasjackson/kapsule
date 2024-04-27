@@ -1,4 +1,4 @@
-module github.com/nicholasjackson/llm-image-builder
+module github.com/nicholasjackson/kapsule
 
 go 1.22.2
 

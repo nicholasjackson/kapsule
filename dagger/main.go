@@ -149,6 +149,7 @@ func (d *Kapsule) Build(
 					"go", "build",
 					"-o", path,
 					"-ldflags", fmt.Sprintf("-X main.version=%s -X main.sha=%s", version, sha),
+					"./cmd",
 				}).
 				Sync(ctx)
 
@@ -437,8 +438,8 @@ func (d *Kapsule) UpdateBrew(
 
 	_, err := cli.Brew().Formula(
 		ctx,
-		"https://github.com/nicholasjackson",
-		"nicholasjackson/kapsule-homebrew-repo",
+		"https://github.com/nicholasjackson/kapsule",
+		"nicholasjackson/homebrew-repo",
 		version,
 		"Nic Jackson",
 		"jackson.nic@gmail.com",
@@ -473,7 +474,7 @@ func (d *Kapsule) UpdateGemFury(
 	cli := dag.Pipeline("update-gem-fury")
 
 	tkn, _ := gemFuryToken.Plaintext(ctx)
-	url := fmt.Sprintf("https://%s@push.fury.io/kapsule/", tkn)
+	url := fmt.Sprintf("https://%s@push.fury.io/nicholasjackson/", tkn)
 
 	for _, a := range gemFury {
 		output := strings.Replace(a.Output, "%%VERSION%%", version, 1)
