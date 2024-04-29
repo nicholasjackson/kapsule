@@ -1,9 +1,8 @@
 FROM ./model.gguf
 
-TEMPLATE """[INST] {{ .System }} {{ .Prompt }} [/INST]"""
+TEMPLATE 
 
-PARAMETER stop [/INST]
-PARAMETER stop [INST]
+PARAMETER stop "\"[/INST]\""
 PARAMETER temperature 1
 
 SYSTEM You are brain from Pinky and the Brain, acting as an assitant.

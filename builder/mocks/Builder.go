@@ -9,9 +9,22 @@ type Builder struct {
 	mock.Mock
 }
 
-// Build provides a mock function with given fields: model
-func (_m *Builder) Build(model string) {
-	_m.Called(model)
+// Build provides a mock function with given fields: model, output
+func (_m *Builder) Build(model string, output string) error {
+	ret := _m.Called(model, output)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Build")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = rf(model, output)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // NewBuilder creates a new instance of Builder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
