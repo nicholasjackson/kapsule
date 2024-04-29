@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	modelfile "github.com/nicholasjackson/llm-image-builder/modelfile"
+	modelfile "github.com/nicholasjackson/kapsule/modelfile"
 	mock "github.com/stretchr/testify/mock"
 )
 

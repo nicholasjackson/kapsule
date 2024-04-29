@@ -49,6 +49,8 @@ jobs:
     environment:
       name: release
     runs-on: ubuntu-latest
+    needs:
+      - dagger_build
     steps:
       - name: Set keys
         run: |
