@@ -11,8 +11,8 @@ import (
 
 var oses = []string{"linux", "darwin", "windows"}
 var arches = []string{"amd64", "arm64"}
-var owner = "kapsule"
-var repo = "nicholasjackson"
+var owner = "nicholasjackson"
+var repo = "kapsule"
 
 func New() *Kapsule {
 	return &Kapsule{}
@@ -86,7 +86,7 @@ func (d *Kapsule) All(
 		output, _ = d.SignAndNotorize(ctx, version, output, notorizeCert, notorizeCertPassword, notorizeKey, notorizeId, notorizeIssuer)
 	}
 
-	// generate the checksums
+	//// generate the checksums
 	output, _ = d.GenerateChecksums(ctx, output, version)
 
 	return output, d.lastError
@@ -137,8 +137,14 @@ func (d *Kapsule) Build(
 		for _, goarch := range arches {
 			fmt.Println("Build for", goos, goarch, "...")
 
+			binary := repo
+			if goos == "windows" {
+				binary = fmt.Sprintf("%s.exe", binary)
+			}
+
 			// create a directory for each os and arch
-			path := fmt.Sprintf("build/%s/%s/", goos, goarch)
+			path := fmt.Sprintf("build/%s/%s", goos, goarch)
+			output := fmt.Sprintf("%s/%s", path, binary)
 
 			// set GOARCH and GOOS in the build environment
 			build, err := golang.
@@ -147,9 +153,9 @@ func (d *Kapsule) Build(
 				WithEnvVariable("GOARCH", goarch).
 				WithExec([]string{
 					"go", "build",
-					"-o", path,
+					"-o", output,
 					"-ldflags", fmt.Sprintf("-X main.version=%s -X main.sha=%s", version, sha),
-					"./cmd",
+					"./cmd/...",
 				}).
 				Sync(ctx)
 
@@ -510,6 +516,7 @@ func (d *Kapsule) getVersion(ctx context.Context, token *Secret, src *Directory)
 		Stdout(ctx)
 
 	if err != nil {
+		log.Error(err)
 		d.lastError = err
 		return "", "", err
 	}
@@ -525,7 +532,7 @@ func (d *Kapsule) getVersion(ctx context.Context, token *Secret, src *Directory)
 
 	if err != nil {
 		d.lastError = err
-		return "", "", err
+		return "0.0.0", ref, err
 	}
 
 	// if there is no version, default to 0.0.0
