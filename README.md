@@ -1,4 +1,4 @@
-# Kapsule
+# Kapsule WORK IN PROGRESS
 
 [<img src="./images/kapsule_logo.png" width="250"/>](./images/kapsule_logo.png)
 
@@ -72,3 +72,17 @@ kapsule pull \
   --format ollama \
   hub.docker.io/nicholasjackson/mymodel:latest
 ```
+
+## WORKING-ISH:
+[] Initial model specification  
+[] Building Kapsule images  
+[] Push models to OCI registries  
+[] Pull models from OCI registries  
+
+## TODO:
+  [] Layer encryption plugin using Hashicorp Vault  
+  [] Layer encryption plugin using RSA/ECDS keys  
+  [] Complete Modelfile specification  
+  [] Ollama export format  
+  [] Huggingface export format  
+  [] PyTorch export format  
