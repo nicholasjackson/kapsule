@@ -9,6 +9,16 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 )
 
+type Writer interface {
+	// Write to path writes the image to a local OCI image registry defined by output
+	// if no existing regitry exists at the output path, WriteToPath scaffolds a new
+	// regitstry before writing the image
+	WriteToPath(image v1.Image, output string) error
+	// PushToRegistry pushes the given image to a remote OCI image registry
+	PushToRegistry(imageRef string, image v1.Image, username, password string) error
+}
+
+// WriterImpl is a concrete implementation of the Writer interface
 type WriterImpl struct{}
 
 func WriteToPath(image v1.Image, output string) error {
@@ -32,7 +42,7 @@ func WriteToPath(image v1.Image, output string) error {
 	return nil
 }
 
-func WriteToRegistry(imageRef string, image v1.Image, username, password string) error {
+func PushToRegistry(imageRef string, image v1.Image, username, password string) error {
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {
 		panic(err)
