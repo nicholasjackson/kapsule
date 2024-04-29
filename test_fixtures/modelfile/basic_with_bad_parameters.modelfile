@@ -2,7 +2,7 @@ FROM ./model.gguf
 
 TEMPLATE """[INST] {{ .System }} {{ .Prompt }} [/INST]"""
 
-PARAMETER stop [/INST]
+PARAMETER stop
 PARAMETER stop [INST]
 PARAMETER temperature 1
 

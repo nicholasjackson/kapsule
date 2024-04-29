@@ -1,4 +1,4 @@
-FROM ./model.gguf
+FROM ./dummy.gguf
 
 TEMPLATE """[INST] {{ .System }} {{ .Prompt }} [/INST]"""
 
