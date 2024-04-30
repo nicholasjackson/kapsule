@@ -16,6 +16,11 @@ LLMs or when embedding data using the Retrieval Augmented Generation (RAG) patte
 It is the goal of Kapsule to be easy to provide a similar workflow that developers are
 already used to.
 
+## What does Kapsule NOT do?
+
+It is not within the scope of Kapsule to convert models between their differing formats,
+for example converting a Hugging Face model into a gguf model. Kapsule will also not 
+con
 
 ## Modelfile
 

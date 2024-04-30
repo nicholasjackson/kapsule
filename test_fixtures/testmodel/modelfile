@@ -1,9 +1,9 @@
-FROM ./dummy.gguf
+FROM ./finetuned-Q4_K_M.gguf
 
 TEMPLATE """[INST] {{ .System }} {{ .Prompt }} [/INST]"""
 
 PARAMETER stop [/INST]
 PARAMETER stop [INST]
-PARAMETER temperature 1
+PARAMETER temperature 0.8
 
 SYSTEM You are brain from Pinky and the Brain, acting as an assitant.

@@ -23,9 +23,24 @@ func setupWriter(t *testing.T) (image v1.Image, output string) {
 	return i, o
 }
 
-func TestWritesToRemoteRegistry(t *testing.T) {
+func TestACCWritesToRemoteRegistry(t *testing.T) {
+	if os.Getenv("TEST_ACC") != "1" {
+		t.Skip("Skipping test as Env var TEST_ACC is not set")
+	}
+
 	i, _ := setupWriter(t)
 
 	err := PushToRegistry("docker.io/nicholasjackson/llm_test:latest", i, os.Getenv("DOCKER_USERNAME"), os.Getenv("DOCKER_PASSWORD"))
+	require.NoError(t, err)
+}
+
+func TestWriteToOllamaFormat(t *testing.T) {
+	//if os.Getenv("TEST_ACC") != "1" {
+	//	t.Skip("Skipping test as Env var TEST_ACC is not set")
+	//}
+
+	i, _ := setupWriter(t)
+
+	err := WriteToOllama(i, "image:test", "/home/nicj/go/src/github.com/nicholasjackson/demo-vault-securing-llm/cache/olama/models")
 	require.NoError(t, err)
 }
