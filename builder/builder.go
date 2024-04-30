@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/stream"
+	"github.com/nicholasjackson/kapsule/encryptor"
 	"github.com/nicholasjackson/kapsule/modelfile"
 )
 
@@ -24,11 +25,15 @@ type Builder interface {
 
 // BuilderImpl is a concrete implementation of the Builder interface
 type BuilderImpl struct {
-	parser modelfile.Parser
+	parser    modelfile.Parser
+	encryptor *encryptor.EncryptorImpl
 }
 
 func NewBuilder() Builder {
-	return &BuilderImpl{&modelfile.ParserImpl{}}
+	return &BuilderImpl{
+		&modelfile.ParserImpl{}
+		encryptor.NewEncryptor(),
+	}
 }
 
 func (b *BuilderImpl) Build(model, context, output string) (v1.Image, error) {
