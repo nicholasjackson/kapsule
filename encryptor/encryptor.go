@@ -21,7 +21,9 @@ func NewEncryptor() Encryptor {
 }
 
 func (b *EncryptorImpl) Encrypt(foo string) (string, error) {
+	return "", nil
 }
 
 func (b *EncryptorImpl) Decrypt(foo string) (string, error) {
+	return "", nil
 }

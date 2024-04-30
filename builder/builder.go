@@ -26,13 +26,13 @@ type Builder interface {
 // BuilderImpl is a concrete implementation of the Builder interface
 type BuilderImpl struct {
 	parser    modelfile.Parser
-	encryptor *encryptor.EncryptorImpl
+	encryptor encryptor.EncryptorImpl
 }
 
 func NewBuilder() Builder {
 	return &BuilderImpl{
-		&modelfile.ParserImpl{}
-		encryptor.NewEncryptor(),
+		&modelfile.ParserImpl{},
+		encryptor.EncryptorImpl{},
 	}
 }
 
