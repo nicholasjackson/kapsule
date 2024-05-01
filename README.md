@@ -1,4 +1,4 @@
-# Kapsule
+# Kapsule WORK IN PROGRESS
 
 [<img src="./images/kapsule_logo.png" width="250"/>](./images/kapsule_logo.png)
 
@@ -16,6 +16,11 @@ LLMs or when embedding data using the Retrieval Augmented Generation (RAG) patte
 It is the goal of Kapsule to be easy to provide a similar workflow that developers are
 already used to.
 
+## What does Kapsule NOT do?
+
+It is not within the scope of Kapsule to convert models between their differing formats,
+for example converting a Hugging Face model into a gguf model. Kapsule will also not 
+con
 
 ## Modelfile
 
@@ -72,3 +77,17 @@ kapsule pull \
   --format ollama \
   hub.docker.io/nicholasjackson/mymodel:latest
 ```
+
+## WORKING-ISH:
+[] Initial model specification  
+[] Building Kapsule images  
+[] Push models to OCI registries  
+[] Pull models from OCI registries  
+
+## TODO:
+  [] Layer encryption plugin using Hashicorp Vault  
+  [] Layer encryption plugin using RSA/ECDS keys  
+  [] Complete Modelfile specification  
+  [] Ollama export format  
+  [] Huggingface export format  
+  [] PyTorch export format  
