@@ -75,12 +75,13 @@ func PushToRegistry(imageRef string, image v1.Image, username, password string) 
 }
 
 func WriteToOllama(image v1.Image, imageRef, output string) error {
-	ref, err := name.ParseReference(imageRef, name.WithDefaultRegistry("kapsule"))
+	cn := types.CanonicalRef(imageRef)
+	ref, err := name.ParseReference(cn)
 	if err != nil {
 		panic(err)
 	}
 
-	manifestFolder := path.Join(output, "manifests", ref.Context().RegistryStr(), "library", ref.Context().RepositoryStr())
+	manifestFolder := path.Join(output, "manifests", ref.Context().RegistryStr(), ref.Context().RepositoryStr())
 	blobsFolder := path.Join(output, "blobs")
 
 	// create the folders

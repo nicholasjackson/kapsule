@@ -9,12 +9,13 @@ import (
 
 func init() {
 	rootCmd.AddCommand(newBuildCmd())
+	rootCmd.AddCommand(newPullCmd())
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "llm-image",
-	Short: "LLM Image enables large language models to be bundled into OCI images",
-	Long:  "LLM Image enables large language models to be bundled into OCI images",
+	Use:   "kapsule",
+	Short: "Kapsule enables large language models to be bundled into OCI images",
+	Long:  "Kapsule enables large language models to be bundled into OCI images",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Do Stuff Here
 	},

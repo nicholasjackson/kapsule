@@ -17,7 +17,7 @@ func setupWriter(t *testing.T) (image v1.Image, output string) {
 	os.MkdirAll(o, os.ModePerm)
 
 	b := builder.NewBuilder()
-	i, err := b.Build("../test_fixtures/testmodel/modelfile", "../test_fixtures/testmodel/", o)
+	i, err := b.Build("../test_fixtures/testmodel/modelfile", "../test_fixtures/testmodel/")
 	require.NoError(t, err)
 
 	return i, o
@@ -34,13 +34,13 @@ func TestACCWritesToRemoteRegistry(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestWriteToOllamaFormat(t *testing.T) {
+func TestACCWriteToOllamaFormat(t *testing.T) {
 	//if os.Getenv("TEST_ACC") != "1" {
 	//	t.Skip("Skipping test as Env var TEST_ACC is not set")
 	//}
 
 	i, _ := setupWriter(t)
 
-	err := WriteToOllama(i, "image:test", "/home/nicj/go/src/github.com/nicholasjackson/demo-vault-securing-llm/cache/olama/models")
+	err := WriteToOllama(i, "kapsule.io/nicholasjackson/mistral:tune", "/home/nicj/go/src/github.com/nicholasjackson/demo-vault-securing-llm/cache/olama/models")
 	require.NoError(t, err)
 }

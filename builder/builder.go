@@ -22,7 +22,7 @@ import (
 //go:generate mockery --name Builder
 type Builder interface {
 	// Build an image using the given modelfile path and write to the output path
-	Build(model, context, output string) (v1.Image, error)
+	Build(model, context string) (v1.Image, error)
 }
 
 // BuilderImpl is a concrete implementation of the Builder interface
@@ -34,7 +34,7 @@ func NewBuilder() Builder {
 	return &BuilderImpl{&modelfile.ParserImpl{}}
 }
 
-func (b *BuilderImpl) Build(model, context, output string) (v1.Image, error) {
+func (b *BuilderImpl) Build(model, context string) (v1.Image, error) {
 	base := empty.Image
 
 	// parse the modelfile
@@ -93,8 +93,4 @@ func (b *BuilderImpl) Build(model, context, output string) (v1.Image, error) {
 	}
 
 	return image, nil
-}
-
-func stringToReadCloser(s string) io.ReadCloser {
-	return io.NopCloser(bytes.NewReader([]byte(s)))
 }
