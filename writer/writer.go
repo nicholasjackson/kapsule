@@ -71,6 +71,7 @@ func PushToRegistry(imageRef string, image v1.Image, username, password string) 
 
 	auth := authn.FromConfig(*cfg)
 
+	// remote.WithProgress to write the image with progress
 	return remote.Write(ref, image, remote.WithAuth(auth))
 }
 
