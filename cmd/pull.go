@@ -45,7 +45,7 @@ func newPullCmd() *cobra.Command {
 				}
 			case "oci":
 				if outputFolder == "" {
-					err := writer.WriteToPath(i, outputFolder)
+					err := writer.WriteToPath(i, outputFolder, encryptionKey)
 					if err != nil {
 						log.Error("Failed to write image to path", "path", outputFolder, "error", err)
 						return
@@ -67,6 +67,7 @@ func newPullCmd() *cobra.Command {
 	pullCmd.Flags().StringVarP(&registryUsername, "username", "", "", "Specify the username for the remote registry")
 	pullCmd.Flags().StringVarP(&registryPassword, "password", "", "", "Specify the password for the remote registry")
 	pullCmd.Flags().StringVarP(&encryptionKey, "encryption-key", "", "", "The encryption key to use for encrypting the image")
+	pullCmd.Flags().StringVarP(&decryptionKey, "decryption-key", "", "", "The decryption key to use for encrypting the image, RSA private key")
 	pullCmd.Flags().StringVarP(&encryptionVaultKey, "encryption-vault-key", "", "", "The path to the exportable encryption key in vault to use for encrypting the image")
 	pullCmd.Flags().StringVarP(&encryptionVaultAuthToken, "encryption-vault-auth-token", "", "", "The vault token to use for accessing the encryption key")
 	pullCmd.Flags().StringVarP(&encryptionVaultAuthAddr, "encryption-vault-addr", "", "", "The address of the vault server to use for accessing the encryption key")

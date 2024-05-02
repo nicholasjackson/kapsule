@@ -2,67 +2,88 @@ package crypto
 
 import (
 	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
+	"compress/gzip"
 	"io"
+	"io/ioutil"
 	"testing"
 
+	"github.com/containers/ocicrypt"
+	"github.com/containers/ocicrypt/config"
+	"github.com/containers/ocicrypt/utils"
+	"github.com/google/go-containerregistry/pkg/v1/stream"
+	"github.com/nicholasjackson/kapsule/types"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/stretchr/testify/require"
 )
 
-func generateAES256Key() ([]byte, error) {
-	key := make([]byte, 32) // AES-256 key size
-	_, err := io.ReadFull(rand.Reader, key)
-	if err != nil {
-		return nil, err
-	}
-	return key, nil
-}
-
 func TestEncryptedLayerEncryptsContent(t *testing.T) {
-	//templateLayer := stream.NewLayer(
-	//	stream.WithCompressionLevel(gzip.NoCompression),
-	//	stream.WithMediaType(types.KAPSULE_MEDIA_TYPE_TEMPLATE),
-	//)
 
-	key, err := generateAES256Key()
+	templateLayer := stream.NewLayer(
+		io.NopCloser(bytes.NewReader([]byte("hello world"))),
+		stream.WithCompressionLevel(gzip.DefaultCompression),
+		stream.WithMediaType(types.KAPSULE_MEDIA_TYPE_TEMPLATE),
+	)
+
+	// Load the public key from file
+	pubKeyFile := "../test_fixtures/keys/public.key"
+	pubKeyBytes, err := ioutil.ReadFile(pubKeyFile)
 	require.NoError(t, err)
 
-	l := NewEncryptedLayer(io.NopCloser(bytes.NewReader([]byte("template"))), key)
-
-	r, err := l.Compressed()
+	privKeyFile := "../test_fixtures/keys/private.key"
+	privKeyBytes, err := ioutil.ReadFile(privKeyFile)
 	require.NoError(t, err)
 
-	encrypted, err := io.ReadAll(r)
-	require.NoError(t, err)
-	require.NotEqual(t, "template", string(encrypted))
+	pub := utils.IsPublicKey(pubKeyBytes)
+	require.True(t, pub)
 
-	// the data should be encrypted
-	// decrypt it
-	dr, err := decryptReader(bytes.NewReader(encrypted), key)
-	require.NoError(t, err)
-	plain, err := io.ReadAll(dr)
-	require.NoError(t, err)
+	priv, _ := utils.IsPrivateKey(privKeyBytes, nil)
+	require.True(t, priv)
 
-	// check it is the same as original
-	require.Equal(t, "template", string(plain))
-}
-
-func decryptReader(r io.Reader, key []byte) (io.Reader, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
+	// Create an encryption config
+	ec := &config.EncryptConfig{
+		Parameters: map[string][][]byte{
+			"pubkeys": [][]byte{pubKeyBytes},
+		},
+		DecryptConfig: config.DecryptConfig{
+			Parameters: map[string][][]byte{
+				"privkeys":           [][]byte{privKeyBytes},
+				"privkeys-passwords": [][]byte{[]byte("")},
+			},
+		},
 	}
 
-	var iv [aes.BlockSize]byte
-	if _, err := io.ReadFull(rand.Reader, iv[:]); err != nil {
-		return nil, err
-	}
+	r, err := templateLayer.Compressed()
+	require.NoError(t, err)
 
-	stream := cipher.NewCFBDecrypter(block, iv[:])
+	// descriptor holds the annotation for the layer, etc
+	des := ocispec.Descriptor{}
 
-	reader := &cipher.StreamReader{S: stream, R: r}
+	er, fin, err := ocicrypt.EncryptLayer(ec, r, des)
+	require.NoError(t, err)
 
-	return io.NopCloser(reader), nil
+	d, err := io.ReadAll(er)
+	require.NoError(t, err)
+	require.NotEqual(t, "hello world", string(d))
+
+	annot, err := fin()
+	require.NoError(t, err)
+	require.NotEmpty(t, annot)
+
+	des.Annotations = annot
+
+	// Decrypt the layer
+	crypt := bytes.NewReader(d)
+	dr, _, err := ocicrypt.DecryptLayer(&ec.DecryptConfig, crypt, des, false)
+	require.NoError(t, err)
+
+	d, err = io.ReadAll(dr)
+	require.NoError(t, err)
+	require.NotEqual(t, "hello world", string(d))
+
+	gz, err := gzip.NewReader(bytes.NewReader(d))
+	require.NoError(t, err)
+
+	d, err = io.ReadAll(gz)
+	require.NoError(t, err)
+	require.Equal(t, "hello world", string(d))
 }

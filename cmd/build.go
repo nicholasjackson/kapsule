@@ -17,6 +17,7 @@ var insecure bool
 var registryUsername string
 var registryPassword string
 var encryptionKey string
+var decryptionKey string
 var encryptionVaultKey string
 var encryptionVaultAuthToken string
 var encryptionVaultAuthAddr string
@@ -35,7 +36,7 @@ func newBuildCmd() *cobra.Command {
 
 			ctx := args[0]
 
-			logger.Info("Building image", "modelfile", modelFile, "context", ctx, "output", outputFolder)
+			logger.Info("Building image", "modelfile", modelFile, "context", ctx, "output", outputFolder, "format", outputFormat, "tag", tag)
 
 			b := builder.NewBuilder()
 			i, err := b.Build(modelFile, ctx)
@@ -58,8 +59,8 @@ func newBuildCmd() *cobra.Command {
 					return
 				}
 			case "oci":
-				if outputFolder == "" {
-					err := writer.WriteToPath(i, outputFolder)
+				if outputFolder != "" {
+					err := writer.WriteToPath(i, outputFolder, encryptionKey)
 					if err != nil {
 						log.Error("Failed to write image to path", "path", outputFolder, "error", err)
 						return
@@ -85,7 +86,8 @@ func newBuildCmd() *cobra.Command {
 	buildCmd.Flags().BoolVarP(&insecure, "insecure", "", false, "Push to an insecure registry")
 	buildCmd.Flags().StringVarP(&registryUsername, "username", "", "", "Specify the username for the remote registry")
 	buildCmd.Flags().StringVarP(&registryPassword, "password", "", "", "Specify the password for the remote registry")
-	buildCmd.Flags().StringVarP(&encryptionKey, "encryption-key", "", "", "The encryption key to use for encrypting the image")
+	buildCmd.Flags().StringVarP(&encryptionKey, "encryption-key", "", "", "The encryption key to use for encrypting the image, RSA public key")
+	buildCmd.Flags().StringVarP(&decryptionKey, "decryption-key", "", "", "The decryption key to use for encrypting the image, RSA private key")
 	buildCmd.Flags().StringVarP(&encryptionVaultKey, "encryption-vault-key", "", "", "The path to the exportable encryption key in vault to use for encrypting the image")
 	buildCmd.Flags().StringVarP(&encryptionVaultAuthToken, "encryption-vault-auth-token", "", "", "The vault token to use for accessing the encryption key")
 	buildCmd.Flags().StringVarP(&encryptionVaultAuthAddr, "encryption-vault-addr", "", "", "The address of the vault server to use for accessing the encryption key")

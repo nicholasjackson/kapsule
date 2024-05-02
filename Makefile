@@ -17,9 +17,23 @@ test_build_ollama:
 		--format ollama \
 		./test_fixtures/testmodel
 
-test_push_docker:
+test_build_local:
 	go run ./cmd build \
 		--output ./output \
+		-f ./test_fixtures/testmodel/modelfile \
+		-t kapsule.io/nicholasjackson/mistral:tune \
+		./test_fixtures/testmodel
+
+test_build_local_encrypted:
+	go run ./cmd build \
+		--output ./output \
+		--encryption-key ./test_fixtures/keys/public.key \
+		-f ./test_fixtures/testmodel/modelfile \
+		-t kapsule.io/nicholasjackson/mistral:tune \
+		./test_fixtures/testmodel
+
+test_push_docker:
+	go run ./cmd build \
 		-f ./test_fixtures/testmodel/modelfile \
 		-t docker.io/nicholasjackson/mistral:tuned \
 		--username ${DOCKER_USERNAME} \

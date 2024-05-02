@@ -30,9 +30,10 @@ type Writer interface {
 }
 
 // WriterImpl is a concrete implementation of the Writer interface
-type WriterImpl struct{}
+type WriterImpl struct {
+}
 
-func WriteToPath(image v1.Image, output string) error {
+func WriteToPath(image v1.Image, output, publicKeyPath string) error {
 	var err error
 	var p layout.Path
 
@@ -43,6 +44,20 @@ func WriteToPath(image v1.Image, output string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// if we have a public key, we need to encrypt the image
+	// we do this by wrapping the image in a layers with an
+	// encrypted layer
+	if publicKeyPath != "" {
+		fmt.Println("Encrypting image")
+		ei, err := wrapLayersWithEncryptedLayer(image, publicKeyPath)
+		if err != nil {
+			return fmt.Errorf("unable to encrypt image: %s", err)
+		}
+
+		// replate the image with the encrypted image
+		image = ei
 	}
 
 	err = p.AppendImage(image)
