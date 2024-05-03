@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/containers/ocicrypt"
 	"github.com/containers/ocicrypt/config"
@@ -147,11 +148,11 @@ func (el *DecryptedLayer) Size() (int64, error) {
 }
 
 func (el *DecryptedLayer) MediaType() (types.MediaType, error) {
-	// MediaType of the encrypted layer is the same as the original +enc
+	// MediaType of the decrypted layer should have +enc stripped
 	mt, err := el.layer.MediaType()
 	if err != nil {
 		return "", err
 	}
 
-	return types.MediaType(mt + "+enc"), nil
+	return types.MediaType(strings.TrimSuffix(string(mt), "+enc")), nil
 }

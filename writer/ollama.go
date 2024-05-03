@@ -16,7 +16,7 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-func WriteToOllama(image v1.Image, imageRef, output string) error {
+func WriteToOllama(image v1.Image, imageRef, output, privateKeyPath string) error {
 	cn := types.CanonicalRef(imageRef)
 	ref, err := name.ParseReference(cn)
 	if err != nil {
@@ -37,10 +37,26 @@ func WriteToOllama(image v1.Image, imageRef, output string) error {
 		return fmt.Errorf("unable to create blobs folder: %s", err)
 	}
 
-	// add the layer digests
-	layers, err := image.Layers()
-	if err != nil {
-		return fmt.Errorf("unable to read layers: %s", err)
+	var layers []v1.Layer
+	// if the layers are encrypted we need to wrap them in a decrypting layer
+	if privateKeyPath != "" {
+		// wrap the layers in a decrypted layer
+		fmt.Println("Decrypting image")
+		ei, err := wrapLayersWithDecryptedLayer(image, privateKeyPath)
+		if err != nil {
+			return fmt.Errorf("unable to encrypt image: %s", err)
+		}
+
+		layers, err = ei.Layers()
+		if err != nil {
+			return fmt.Errorf("unable to read layers: %s", err)
+		}
+	} else {
+		// get the unencrypted layers from the image
+		layers, err = image.Layers()
+		if err != nil {
+			return fmt.Errorf("unable to read layers: %s", err)
+		}
 	}
 
 	// add the layers
@@ -182,6 +198,9 @@ func writeLayerBlob(blobPath string, layer v1.Layer, layerType string) (*manifes
 	// create the manifest
 	sd := manifest.Schema2Descriptor{}
 
+	fmt.Println("layer type", layerType)
+	// if the layer type is encrypted it will have a +enc suffix
+	// remove this before setting the media type
 	switch layerType {
 	case types.KAPSULE_MEDIA_TYPE_PARAMETERS:
 		sd.MediaType = types.OLLAMA_MEDIA_TYPE_PARAMETERS

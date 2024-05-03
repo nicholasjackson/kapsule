@@ -54,7 +54,7 @@ func newBuildCmd() *cobra.Command {
 					return
 				}
 
-				err := writer.WriteToOllama(i, tag, outputFolder)
+				err := writer.WriteToOllama(i, tag, outputFolder, decryptionKey)
 				if err != nil {
 					log.Error("Failed to write image to ollama", "path", outputFolder, "error", err)
 					return
