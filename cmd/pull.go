@@ -45,14 +45,15 @@ func newPullCmd() *cobra.Command {
 				}
 			case "oci":
 				if outputFolder == "" {
-					err := writer.WriteToPath(i, outputFolder, encryptionKey)
-					if err != nil {
-						log.Error("Failed to write image to path", "path", outputFolder, "error", err)
-						return
-					}
+					log.Error("Output folder '--output-folder' must be specified for Ollama format")
+					return
 				}
 
-				log.Error("You must specify --output when pulling images")
+				err := writer.WriteToPath(i, outputFolder, encryptionKey, decryptionKey, true)
+				if err != nil {
+					log.Error("Failed to write image to path", "path", outputFolder, "error", err)
+					return
+				}
 				return
 			default:
 				log.Error("Unsupported format", "format", outputFormat)
@@ -64,6 +65,7 @@ func newPullCmd() *cobra.Command {
 	pullCmd.Flags().StringVarP(&outputFormat, "format", "", "oci", "Specify the output format for the built image, defaults to OCI image format, options: [ollama, oci]")
 	pullCmd.Flags().StringVarP(&outputFolder, "output", "o", "", "Specify the output folder for the built image, if not specified the image will be pushed to a remote registry")
 	pullCmd.Flags().BoolVarP(&insecure, "insecure", "", false, "Push to an insecure registry")
+	pullCmd.Flags().BoolVarP(&unzip, "unzip", "", true, "Uncompresses layers when writing to disk")
 	pullCmd.Flags().StringVarP(&registryUsername, "username", "", "", "Specify the username for the remote registry")
 	pullCmd.Flags().StringVarP(&registryPassword, "password", "", "", "Specify the password for the remote registry")
 	pullCmd.Flags().StringVarP(&encryptionKey, "encryption-key", "", "", "The encryption key to use for encrypting the image")

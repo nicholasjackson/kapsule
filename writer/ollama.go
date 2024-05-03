@@ -9,86 +9,12 @@ import (
 	"path"
 
 	"github.com/containers/image/v5/manifest"
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/empty"
-	"github.com/google/go-containerregistry/pkg/v1/layout"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/stream"
 	"github.com/nicholasjackson/kapsule/types"
 	"github.com/opencontainers/go-digest"
 )
-
-type Writer interface {
-	// Write to path writes the image to a local OCI image registry defined by output
-	// if no existing regitry exists at the output path, WriteToPath scaffolds a new
-	// regitstry before writing the image
-	WriteToPath(image v1.Image, output string) error
-	// PushToRegistry pushes the given image to a remote OCI image registry
-	PushToRegistry(imageRef string, image v1.Image, username, password string) error
-}
-
-// WriterImpl is a concrete implementation of the Writer interface
-type WriterImpl struct {
-}
-
-func WriteToPath(image v1.Image, output, publicKeyPath string) error {
-	var err error
-	var p layout.Path
-
-	p, err = layout.FromPath(output)
-	if err != nil {
-		// no index exists at the path, create a new index
-		p, err = layout.Write(output, empty.Index)
-		if err != nil {
-			return err
-		}
-	}
-
-	// if we have a public key, we need to encrypt the image
-	// we do this by wrapping the image in a layers with an
-	// encrypted layer
-	if publicKeyPath != "" {
-		fmt.Println("Encrypting image")
-		ei, err := wrapLayersWithEncryptedLayer(image, publicKeyPath)
-		if err != nil {
-			return fmt.Errorf("unable to encrypt image: %s", err)
-		}
-
-		// replate the image with the encrypted image
-		image = ei
-	}
-
-	err = p.AppendImage(image)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func PushToRegistry(imageRef string, image v1.Image, username, password string) error {
-	ref, err := name.ParseReference(imageRef)
-	if err != nil {
-		panic(err)
-	}
-
-	b := authn.Basic{
-		Username: username,
-		Password: password,
-	}
-
-	cfg, err := b.Authorization()
-	if err != nil {
-		return err
-	}
-
-	auth := authn.FromConfig(*cfg)
-
-	// remote.WithProgress to write the image with progress
-	return remote.Write(ref, image, remote.WithAuth(auth))
-}
 
 func WriteToOllama(image v1.Image, imageRef, output string) error {
 	cn := types.CanonicalRef(imageRef)

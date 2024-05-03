@@ -51,7 +51,11 @@ func (er *wrappedReader) Read(b []byte) (int, error) { return er.pr.Read(b) }
 
 // Close implements the io.Closer interface.
 func (er *wrappedReader) Close() error {
-	return er.finalize()
+	if er.finalize != nil {
+		return er.finalize()
+	}
+
+	return nil
 }
 
 // Size returns the size of the data read from the reader,

@@ -16,6 +16,7 @@ type Reader interface {
 
 type ReaderImpl struct{}
 
+// PullFromRegistry loads an image from a remote OCI registry
 func (r *ReaderImpl) PullFromRegistry(imageRef, username, password string) (v1.Image, error) {
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {

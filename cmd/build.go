@@ -21,6 +21,7 @@ var decryptionKey string
 var encryptionVaultKey string
 var encryptionVaultAuthToken string
 var encryptionVaultAuthAddr string
+var unzip bool
 
 func newBuildCmd() *cobra.Command {
 	buildCmd := &cobra.Command{
@@ -60,13 +61,13 @@ func newBuildCmd() *cobra.Command {
 				}
 			case "oci":
 				if outputFolder != "" {
-					err := writer.WriteToPath(i, outputFolder, encryptionKey)
+					err := writer.WriteToPath(i, outputFolder, encryptionKey, decryptionKey, unzip)
 					if err != nil {
 						log.Error("Failed to write image to path", "path", outputFolder, "error", err)
 						return
 					}
 				} else {
-					err := writer.PushToRegistry(tag, i, registryUsername, registryPassword)
+					err := writer.PushToRegistry(tag, i, registryUsername, registryPassword, encryptionKey)
 					if err != nil {
 						log.Error("Failed to push image to remote registry", "error", err)
 						return
@@ -91,6 +92,7 @@ func newBuildCmd() *cobra.Command {
 	buildCmd.Flags().StringVarP(&encryptionVaultKey, "encryption-vault-key", "", "", "The path to the exportable encryption key in vault to use for encrypting the image")
 	buildCmd.Flags().StringVarP(&encryptionVaultAuthToken, "encryption-vault-auth-token", "", "", "The vault token to use for accessing the encryption key")
 	buildCmd.Flags().StringVarP(&encryptionVaultAuthAddr, "encryption-vault-addr", "", "", "The address of the vault server to use for accessing the encryption key")
+	buildCmd.Flags().BoolVarP(&unzip, "unzip", "", true, "Uncompresses layers when writing to disk")
 
 	return buildCmd
 }

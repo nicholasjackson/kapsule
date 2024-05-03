@@ -1,6 +1,8 @@
 package crypto
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"io"
 
@@ -8,6 +10,7 @@ import (
 	"github.com/containers/ocicrypt/config"
 	"github.com/containers/ocicrypt/utils"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/stream"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -49,14 +52,20 @@ func (el *EncryptedLayer) Digest() (v1.Hash, error) {
 		return v1.NewHash(fmt.Sprintf("sha256:%s", el.hash))
 	}
 
-	return v1.Hash{}, fmt.Errorf("digest is not available until the layer has been consumed")
+	// if we have not yet completed the encryption process we cannot get the digest
+	// so we need to return a special error so that the writer package
+	// will know to fetch this info later
+	return v1.Hash{}, stream.ErrNotComputed
 }
 
 func (el *EncryptedLayer) Annotations() (map[string]string, error) {
-	// return the annotations that are created by the encryption process
-	// this can only be called after the layer has been consumed
+	if el.done {
+		// return the annotations that are created by the encryption process
+		// this can only be called after the layer has been consumed
+		return el.annotations, nil
+	}
 
-	return el.annotations, nil
+	return map[string]string{}, stream.ErrNotComputed
 }
 
 func (el *EncryptedLayer) DiffID() (v1.Hash, error) {
@@ -67,8 +76,12 @@ func (el *EncryptedLayer) DiffID() (v1.Hash, error) {
 func (el *EncryptedLayer) Compressed() (io.ReadCloser, error) {
 	// get the compressed layer reader, this will be passed to the encryptor
 	r, err := el.layer.Compressed()
+	if errors.Is(err, stream.ErrConsumed) {
+		return io.NopCloser(bytes.NewReader(nil)), nil
+	}
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to get compressed stream: %s", err)
 	}
 
 	// consturct the layer encryptor, the comppressed reader passed to the encryptor
@@ -134,7 +147,10 @@ func (el *EncryptedLayer) Size() (int64, error) {
 		return int64(el.size), nil
 	}
 
-	return 0, fmt.Errorf("size is not available until the layer has been consumed")
+	// if we have not yet completed the encryption process we cannot get the digest
+	// so we need to return a special error so that the writer package
+	// will know to fetch this info later
+	return -1, stream.ErrNotComputed
 }
 
 func (el *EncryptedLayer) MediaType() (types.MediaType, error) {
