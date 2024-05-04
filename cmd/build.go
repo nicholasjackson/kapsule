@@ -60,6 +60,11 @@ func newBuildCmd() *cobra.Command {
 				decrypt = true
 			}
 
+			encrypt := false
+			if encryptionKey != "" || encryptionVaultKey != "" {
+				encrypt = true
+			}
+
 			ctx := args[0]
 
 			logger.Info("Building image", "modelfile", modelFile, "context", ctx, "output", outputFolder, "format", outputFormat, "tag", tag)
@@ -88,14 +93,28 @@ func newBuildCmd() *cobra.Command {
 			case "oci":
 				if outputFolder != "" {
 					w := writer.NewPathWriter(logger, kp, outputFolder)
-					err := w.Write(i, tag, decrypt, unzip)
+
+					var err error
+					if encrypt {
+						err = w.WriteEncrypted(i, tag)
+					} else {
+						err = w.Write(i, tag, decrypt, unzip)
+					}
+
 					if err != nil {
 						log.Error("Failed to write image to path", "path", outputFolder, "error", err)
 						return
 					}
 				} else {
 					w := writer.NewOCIRegistry(logger, kp, registryUsername, registryPassword)
-					err := w.Write(i, tag, decrypt, unzip)
+
+					var err error
+					if encrypt {
+						err = w.WriteEncrypted(i, tag)
+					} else {
+						err = w.Write(i, tag, decrypt, unzip)
+					}
+
 					if err != nil {
 						log.Error("Failed to push image to remote registry", "error", err)
 						return

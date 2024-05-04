@@ -13,25 +13,29 @@ import (
 )
 
 type OCIRegistry struct {
-	logger *log.Logger
+	logger   *log.Logger
+	username string
+	password string
 }
 
-func NewOCIRegistry(logger *log.Logger) *OCIRegistry {
+func NewOCIRegistry(logger *log.Logger, username, password string) *OCIRegistry {
 	return &OCIRegistry{
-		logger: logger,
+		logger:   logger,
+		username: username,
+		password: password,
 	}
 }
 
 // PullFromRegistry loads an image from a remote OCI registry
-func (r *OCIRegistry) Pull(imageRef, username, password string) (v1.Image, error) {
+func (r *OCIRegistry) Pull(imageRef string) (v1.Image, error) {
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {
 		panic(err)
 	}
 
 	b := authn.Basic{
-		Username: username,
-		Password: password,
+		Username: r.username,
+		Password: r.password,
 	}
 
 	cfg, err := b.Authorization()

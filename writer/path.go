@@ -62,6 +62,14 @@ func (pw *PathWriter) Write(image v1.Image, imageRef string, decypt, unzip bool)
 		return fmt.Errorf("unable to save image: %s", err)
 	}
 
+	if unzip {
+		pw.logger.Info("Unzipping layers")
+		err = unzipLayers(p, image)
+		if err != nil {
+			return fmt.Errorf("unable to unzip layers: %s", err)
+		}
+	}
+
 	return nil
 }
 
