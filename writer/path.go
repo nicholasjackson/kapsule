@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/log"
+	"github.com/nicholasjackson/kapsule/crypto"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
@@ -16,17 +17,19 @@ import (
 
 // WriterImpl is a concrete implementation of the Writer interface
 type PathWriter struct {
-	logger *log.Logger
+	logger      *log.Logger
+	keyProvider crypto.KeyProvider
 }
 
-func NewPathWriter(logger *log.Logger) *PathWriter {
+func NewPathWriter(logger *log.Logger, keyProvider crypto.KeyProvider) *PathWriter {
 	return &PathWriter{
-		logger: logger,
+		logger:      logger,
+		keyProvider: keyProvider,
 	}
 }
 
 // WriteToPath writes the image to a local OCI image registry defined by output
-func (pw *PathWriter) Write(image v1.Image, output, publicKeyPath, privateKeyPath string, unzip bool) error {
+func (pw *PathWriter) Write(image v1.Image, output, string, decypt, unzip bool) error {
 	var err error
 	var p layout.Path
 
@@ -100,10 +103,9 @@ func (pw *PathWriter) Write(image v1.Image, output, publicKeyPath, privateKeyPat
 		}
 	}
 
-	// are we decrypting the image
 	// do we need up unzip the layers?
 	if unzip {
-		pw.logger.Info("Unzipping layers before writing to disk")
+		pw.logger.Info("Unzipping layer content")
 
 		err = unzipLayers(p, image)
 		if err != nil {

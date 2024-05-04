@@ -76,13 +76,8 @@ func appendEncyptedLayerAnnotations(image v1.Image) (v1.Image, error) {
 }
 
 // wrapLayersWithDecryptedLayer wraps each layer in the image with a decrypted layer
-func wrapLayersWithDecryptedLayer(image v1.Image, privateKeyFile string) (v1.Image, error) {
+func wrapLayersWithDecryptedLayer(image v1.Image, privateKey []byte) (v1.Image, error) {
 	new := empty.Image
-
-	key, err := os.ReadFile(privateKeyFile)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read private key file: %s", err)
-	}
 
 	layers, err := image.Layers()
 	if err != nil {
@@ -104,14 +99,13 @@ func wrapLayersWithDecryptedLayer(image v1.Image, privateKeyFile string) (v1.Ima
 				return nil, fmt.Errorf("layer is encrypted but missing encryption annotations")
 			}
 
-			dl, err := crypto.NewDecryptedLayer(l, key, ann)
+			dl, err := crypto.NewDecryptedLayer(l, privateKey, ann)
 			if err != nil {
 				return nil, fmt.Errorf("unable to create decrypted layer: %s", err)
 			}
 
 			// replace the layer
 			l = dl
-
 		}
 
 		// add the layer back to the image

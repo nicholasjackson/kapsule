@@ -9,10 +9,14 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/nicholasjackson/kapsule/crypto"
 )
 
 type OCIRegistry struct {
-	logger *log.Logger
+	logger      *log.Logger
+	username    string
+	password    string
+	keyProvider crypto.KeyProvider
 }
 
 func NewOCIRegistry(logger *log.Logger) *OCIRegistry {
@@ -22,15 +26,15 @@ func NewOCIRegistry(logger *log.Logger) *OCIRegistry {
 }
 
 // Push pushes the given image to a remote OCI image registry
-func (r *OCIRegistry) Push(imageRef string, image v1.Image, username, password, publicKeyPath string) error {
+func (r *OCIRegistry) Write(image v1.Image, imageRef string, decrypt bool) error {
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {
 		panic(err)
 	}
 
 	b := authn.Basic{
-		Username: username,
-		Password: password,
+		Username: r.username,
+		Password: r.password,
 	}
 
 	cfg, err := b.Authorization()

@@ -13,21 +13,24 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/stream"
+	"github.com/nicholasjackson/kapsule/crypto"
 	"github.com/nicholasjackson/kapsule/types"
 	"github.com/opencontainers/go-digest"
 )
 
 type OllamaWriter struct {
-	logger *log.Logger
+	logger      *log.Logger
+	keyProvider crypto.KeyProvider
 }
 
-func NewOllamaWriter(logger *log.Logger) *OllamaWriter {
+func NewOllamaWriter(logger *log.Logger, kp crypto.KeyProvider) *OllamaWriter {
 	return &OllamaWriter{
-		logger: logger,
+		logger:      logger,
+		keyProvider: kp,
 	}
 }
 
-func (ol *OllamaWriter) Write(image v1.Image, imageRef, output, privateKeyPath string) error {
+func (ol *OllamaWriter) Write(image v1.Image, imageRef, output string, decrypt bool) error {
 	cn := types.CanonicalRef(imageRef)
 	ref, err := name.ParseReference(cn)
 	if err != nil {
@@ -50,11 +53,16 @@ func (ol *OllamaWriter) Write(image v1.Image, imageRef, output, privateKeyPath s
 
 	var layers []v1.Layer
 	// if the layers are encrypted we need to wrap them in a decrypting layer
-	if privateKeyPath != "" {
-		ol.logger.Info("Decrypting layers using private key", "privateKeyPath", privateKeyPath)
+	if decrypt {
+		pk, err := ol.keyProvider.PrivateKey()
+		if err != nil {
+			return fmt.Errorf("unable to get private key: %s", err)
+		}
+
+		ol.logger.Info("Decrypting layers using private key")
 
 		// wrap the layers in a decrypted layer
-		ei, err := wrapLayersWithDecryptedLayer(image, privateKeyPath)
+		ei, err := wrapLayersWithDecryptedLayer(image, pk)
 		if err != nil {
 			return fmt.Errorf("unable to encrypt image: %s", err)
 		}

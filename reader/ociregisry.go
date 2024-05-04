@@ -12,11 +12,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 )
 
-type Registry interface {
-	// Pull loads an image from a remote OCI registry
-	Pull(ref, username, password string) (v1.Image, error)
-}
-
 type OCIRegistry struct {
 	logger *log.Logger
 }
