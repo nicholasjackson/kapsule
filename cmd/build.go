@@ -21,6 +21,7 @@ var decryptionKey string
 var encryptionVaultKey string
 var encryptionVaultAuthToken string
 var encryptionVaultAuthAddr string
+var encryptionVaultAuthNamespace string
 var unzip bool
 var debug bool
 
@@ -38,6 +39,25 @@ func newBuildCmd() *cobra.Command {
 
 			if debug {
 				logger.SetLevel(log.DebugLevel)
+			}
+
+			// are we using encryption, if so build the key provider
+			kp, err := getKeyProvider(
+				encryptionKey,
+				decryptionKey,
+				encryptionVaultKey,
+				encryptionVaultAuthToken,
+				encryptionVaultAuthAddr,
+				encryptionVaultAuthNamespace)
+
+			if err != nil {
+				log.Error("Failed to create key provider", "error", err)
+				return
+			}
+
+			decrypt := false
+			if decryptionKey != "" || encryptionVaultKey != "" {
+				decrypt = true
 			}
 
 			ctx := args[0]
@@ -59,23 +79,23 @@ func newBuildCmd() *cobra.Command {
 					return
 				}
 
-				w := writer.NewOllamaWriter(logger)
-				err := w.Write(i, tag, outputFolder, decryptionKey)
+				w := writer.NewOllamaWriter(logger, kp, outputFolder)
+				err := w.Write(i, tag, decrypt, unzip)
 				if err != nil {
 					log.Error("Failed to write image to ollama", "path", outputFolder, "error", err)
 					return
 				}
 			case "oci":
 				if outputFolder != "" {
-					w := writer.NewPathWriter(logger)
-					err := w.Write(i, outputFolder, encryptionKey, decryptionKey, unzip)
+					w := writer.NewPathWriter(logger, kp, outputFolder)
+					err := w.Write(i, tag, decrypt, unzip)
 					if err != nil {
 						log.Error("Failed to write image to path", "path", outputFolder, "error", err)
 						return
 					}
 				} else {
-					w := writer.NewOCIRegistry(logger)
-					err := w.Push(tag, i, registryUsername, registryPassword, encryptionKey)
+					w := writer.NewOCIRegistry(logger, kp, registryUsername, registryPassword)
+					err := w.Write(i, tag, decrypt, unzip)
 					if err != nil {
 						log.Error("Failed to push image to remote registry", "error", err)
 						return
@@ -100,6 +120,7 @@ func newBuildCmd() *cobra.Command {
 	buildCmd.Flags().StringVarP(&encryptionVaultKey, "encryption-vault-key", "", "", "The path to the exportable encryption key in vault to use for encrypting the image")
 	buildCmd.Flags().StringVarP(&encryptionVaultAuthToken, "encryption-vault-auth-token", "", "", "The vault token to use for accessing the encryption key")
 	buildCmd.Flags().StringVarP(&encryptionVaultAuthAddr, "encryption-vault-addr", "", "", "The address of the vault server to use for accessing the encryption key")
+	buildCmd.Flags().StringVarP(&encryptionVaultAuthNamespace, "encryption-vault-namespace", "", "", "The namespace for the vault server to use for accessing the encryption key")
 	buildCmd.Flags().BoolVarP(&unzip, "unzip", "", true, "Uncompresses layers when writing to disk")
 	buildCmd.Flags().BoolVarP(&debug, "debug", "", false, "Enable logging in debug mode")
 

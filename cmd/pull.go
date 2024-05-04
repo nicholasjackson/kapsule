@@ -25,6 +25,25 @@ func newPullCmd() *cobra.Command {
 
 			tag := args[0]
 
+			// are we using encryption, if so build the key provider
+			kp, err := getKeyProvider(
+				encryptionKey,
+				decryptionKey,
+				encryptionVaultKey,
+				encryptionVaultAuthToken,
+				encryptionVaultAuthAddr,
+				encryptionVaultAuthNamespace)
+
+			if err != nil {
+				log.Error("Failed to create key provider", "error", err)
+				return
+			}
+
+			decrypt := false
+			if decryptionKey != "" || encryptionVaultKey != "" {
+				decrypt = true
+			}
+
 			logger.Info("Pulling image", "tag", tag, "output", outputFolder)
 
 			r := reader.NewOCIRegistry(logger)
@@ -41,8 +60,8 @@ func newPullCmd() *cobra.Command {
 					log.Error("Output folder '--output-folder' must be specified for Ollama format")
 					return
 				}
-				w := writer.NewOllamaWriter(logger)
-				err := w.Write(i, tag, outputFolder, decryptionKey)
+				w := writer.NewOllamaWriter(logger, kp, outputFolder)
+				err := w.Write(i, tag, decrypt, unzip)
 				if err != nil {
 					log.Error("Failed to write image to ollama", "path", outputFolder, "error", err)
 					return
@@ -53,8 +72,8 @@ func newPullCmd() *cobra.Command {
 					return
 				}
 
-				w := writer.NewPathWriter(logger)
-				err := w.Write(i, outputFolder, encryptionKey, decryptionKey, true)
+				w := writer.NewPathWriter(logger, kp, outputFolder)
+				err := w.Write(i, outputFolder, decrypt, unzip)
 				if err != nil {
 					log.Error("Failed to write image to path", "path", outputFolder, "error", err)
 					return

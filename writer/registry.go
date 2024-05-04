@@ -19,14 +19,17 @@ type OCIRegistry struct {
 	keyProvider crypto.KeyProvider
 }
 
-func NewOCIRegistry(logger *log.Logger) *OCIRegistry {
+func NewOCIRegistry(logger *log.Logger, kp crypto.KeyProvider, username, password string) *OCIRegistry {
 	return &OCIRegistry{
-		logger: logger,
+		logger:      logger,
+		username:    username,
+		password:    password,
+		keyProvider: kp,
 	}
 }
 
 // Push pushes the given image to a remote OCI image registry
-func (r *OCIRegistry) Write(image v1.Image, imageRef string, decrypt bool) error {
+func (r *OCIRegistry) Write(image v1.Image, imageRef string, decrypt, unzip bool) error {
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {
 		panic(err)
@@ -44,20 +47,51 @@ func (r *OCIRegistry) Write(image v1.Image, imageRef string, decrypt bool) error
 
 	auth := authn.FromConfig(*cfg)
 
-	// if we have a public key, we need to encrypt the image
+	// remote.WithProgress to write the image with progress
+	r.logger.Info("Pushing image", "imageRef", imageRef)
+	err = remote.Write(ref, image, remote.WithAuth(auth), remote.WithProgress(r.progressReport()))
+	if err != nil {
+		return fmt.Errorf("unable to write image to registry: %s", err)
+	}
+
+	return nil
+}
+
+func (r *OCIRegistry) WriteEncrypted(image v1.Image, imageRef string) error {
+	ref, err := name.ParseReference(imageRef)
+	if err != nil {
+		panic(err)
+	}
+
+	b := authn.Basic{
+		Username: r.username,
+		Password: r.password,
+	}
+
+	cfg, err := b.Authorization()
+	if err != nil {
+		return err
+	}
+
+	auth := authn.FromConfig(*cfg)
+
+	// we need to encrypt the image
 	// we do this by wrapping the image in a layers with an
 	// encrypted layer
-	if publicKeyPath != "" {
-		r.logger.Info("Encrypting layers with public key", "publicKeyPath", publicKeyPath)
-
-		ei, err := wrapLayersWithEncryptedLayer(image, publicKeyPath)
-		if err != nil {
-			return fmt.Errorf("unable to encrypt image: %s", err)
-		}
-
-		// replate the image with the encrypted image
-		image = ei
+	pk, err := r.keyProvider.PublicKey()
+	if err != nil {
+		return fmt.Errorf("unable to get public key: %s", err)
 	}
+
+	r.logger.Info("Encrypting layers with public key")
+
+	ei, err := wrapLayersWithEncryptedLayer(image, pk)
+	if err != nil {
+		return fmt.Errorf("unable to encrypt image: %s", err)
+	}
+
+	// replate the image with the encrypted image
+	image = ei
 
 	// remote.WithProgress to write the image with progress
 	r.logger.Info("Pushing image", "imageRef", imageRef)
@@ -66,23 +100,21 @@ func (r *OCIRegistry) Write(image v1.Image, imageRef string, decrypt bool) error
 		return fmt.Errorf("unable to write image to registry: %s", err)
 	}
 
-	// if we are encrypting the image we need to update the annotations
-	// as they contain information that is needed to decrypt the image
-	if publicKeyPath != "" {
-		r.logger.Info("Updating layers with encryption details")
+	// we need to update the annotations that are set when writing the
+	// encrypted image as they contain information that is needed to
+	// decrypt the image
+	r.logger.Info("Updating layers with encryption details")
 
-		newImage, err := appendEncyptedLayerAnnotations(image)
-		if err != nil {
-			return fmt.Errorf("unable to update annotations: %s", err)
-		}
-
-		r.logger.Info("Updating remote image", "imageRef", imageRef)
-		err = remote.Write(ref, newImage, remote.WithAuth(auth), remote.WithProgress(r.progressReport()))
-		if err != nil {
-			return fmt.Errorf("unable to write image to registry: %s", err)
-		}
+	newImage, err := appendEncyptedLayerAnnotations(image)
+	if err != nil {
+		return fmt.Errorf("unable to update annotations: %s", err)
 	}
 
+	r.logger.Info("Updating remote image", "imageRef", imageRef)
+	err = remote.Write(ref, newImage, remote.WithAuth(auth), remote.WithProgress(r.progressReport()))
+	if err != nil {
+		return fmt.Errorf("unable to write image to registry: %s", err)
+	}
 	return nil
 }
 

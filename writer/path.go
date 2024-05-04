@@ -19,55 +19,35 @@ import (
 type PathWriter struct {
 	logger      *log.Logger
 	keyProvider crypto.KeyProvider
+	filePath    string
 }
 
-func NewPathWriter(logger *log.Logger, keyProvider crypto.KeyProvider) *PathWriter {
+func NewPathWriter(logger *log.Logger, keyProvider crypto.KeyProvider, path string) *PathWriter {
 	return &PathWriter{
 		logger:      logger,
 		keyProvider: keyProvider,
+		filePath:    path,
 	}
 }
 
 // WriteToPath writes the image to a local OCI image registry defined by output
-func (pw *PathWriter) Write(image v1.Image, output, string, decypt, unzip bool) error {
-	var err error
-	var p layout.Path
-
-	if unzip && publicKeyPath != "" {
-		return fmt.Errorf("unzip is not supported when encrypting the image")
-	}
-
-	pw.logger.Info("Attempting to opening existing local path", "path", output)
-	p, err = layout.FromPath(output)
+func (pw *PathWriter) Write(image v1.Image, imageRef string, decypt, unzip bool) error {
+	pw.logger.Info("Attempting to opening existing local path", "path", pw.filePath)
+	p, err := pw.createOrOpenPath()
 	if err != nil {
-		// no index exists at the path, create a new index
-		pw.logger.Info("Path does not exist, creating new path", "path", output)
-		p, err = layout.Write(output, empty.Index)
-		if err != nil {
-			return err
-		}
+		return err
 	}
 
-	// if we have a public key, we need to encrypt the image
-	// we do this by wrapping the image in a layers with an
-	// encrypted layer
-	if publicKeyPath != "" {
-		pw.logger.Info("Encrypting layers with public key", "publicKeyPath", publicKeyPath)
+	if decypt {
+		pw.logger.Info("Decrypting layers with private key")
 
-		ei, err := wrapLayersWithEncryptedLayer(image, publicKeyPath)
+		pk, err := pw.keyProvider.PrivateKey()
 		if err != nil {
-			return fmt.Errorf("unable to encrypt image: %s", err)
+			return fmt.Errorf("unable to get private key: %s", err)
 		}
-
-		// replate the image with the encrypted image
-		image = ei
-	}
-
-	if privateKeyPath != "" {
-		pw.logger.Info("Decrypting layers with private key", "privateKeyPath", privateKeyPath)
 
 		// wrap the layers in a decrypted layer
-		ei, err := wrapLayersWithDecryptedLayer(image, privateKeyPath)
+		ei, err := wrapLayersWithDecryptedLayer(image, pk)
 		if err != nil {
 			return fmt.Errorf("unable to encrypt image: %s", err)
 		}
@@ -76,44 +56,77 @@ func (pw *PathWriter) Write(image v1.Image, output, string, decypt, unzip bool) 
 		image = ei
 	}
 
+	// save the image
+	err = p.AppendImage(image)
+	if err != nil {
+		return fmt.Errorf("unable to save image: %s", err)
+	}
+
+	return nil
+}
+
+func (pw *PathWriter) WriteEncrypted(image v1.Image, imageRef string) error {
+	pw.logger.Info("Attempting to opening existing local path", "path", pw.filePath)
+	p, err := pw.createOrOpenPath()
+	if err != nil {
+		return err
+	}
+
+	pw.logger.Info("Encrypting layers with public key")
+	pk, err := pw.keyProvider.PublicKey()
+	if err != nil {
+		return fmt.Errorf("unable to get public key: %s", err)
+	}
+
+	ei, err := wrapLayersWithEncryptedLayer(image, pk)
+	if err != nil {
+		return fmt.Errorf("unable to encrypt image: %s", err)
+	}
+
+	// replace the image with the encrypted image
+	image = ei
+
+	// we must save the image befoe we can update the annotations
+	// the annotations contain the encrypted key that is used
+	// to decrypt the image
 	err = p.AppendImage(image)
 	if err != nil {
 		return err
 	}
 
-	// if we are encrypting the image we need to update the annotations
-	// as they contain information that is needed to decrypt the image
-	if publicKeyPath != "" {
-		pw.logger.Info("Adding annotations from encryption process to manifest")
+	pw.logger.Info("Adding annotations from encryption process to manifest")
 
-		newImage, err := appendEncyptedLayerAnnotations(image)
-		if err != nil {
-			return fmt.Errorf("unable to update annotations: %s", err)
-		}
-
-		digest, err := image.Digest()
-		if err != nil {
-			return fmt.Errorf("unable to get digest: %s", err)
-		}
-
-		pw.logger.Info("Updating image")
-		err = p.ReplaceImage(newImage, match.Digests(digest))
-		if err != nil {
-			return err
-		}
+	newImage, err := appendEncyptedLayerAnnotations(image)
+	if err != nil {
+		return fmt.Errorf("unable to update annotations: %s", err)
 	}
 
-	// do we need up unzip the layers?
-	if unzip {
-		pw.logger.Info("Unzipping layer content")
+	digest, err := image.Digest()
+	if err != nil {
+		return fmt.Errorf("unable to get digest: %s", err)
+	}
 
-		err = unzipLayers(p, image)
-		if err != nil {
-			return fmt.Errorf("unable to unzip layers: %s", err)
-		}
+	pw.logger.Info("Updating image")
+	err = p.ReplaceImage(newImage, match.Digests(digest))
+	if err != nil {
+		return err
 	}
 
 	return nil
+}
+
+func (pw *PathWriter) createOrOpenPath() (layout.Path, error) {
+	p, err := layout.FromPath(pw.filePath)
+	if err != nil {
+		// no index exists at the path, create a new index
+		pw.logger.Info("Path does not exist, creating new path", "path", pw.filePath)
+		p, err = layout.Write(pw.filePath, empty.Index)
+		if err != nil {
+			return layout.Path(""), fmt.Errorf("unable to create new path: %s", err)
+		}
+	}
+
+	return p, nil
 }
 
 // unzip the blob content of each layer

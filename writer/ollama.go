@@ -21,24 +21,26 @@ import (
 type OllamaWriter struct {
 	logger      *log.Logger
 	keyProvider crypto.KeyProvider
+	filePath string
 }
 
-func NewOllamaWriter(logger *log.Logger, kp crypto.KeyProvider) *OllamaWriter {
+func NewOllamaWriter(logger *log.Logger, kp crypto.KeyProvider, filePath string) *OllamaWriter {
 	return &OllamaWriter{
 		logger:      logger,
 		keyProvider: kp,
+		filePath: filePath,
 	}
 }
 
-func (ol *OllamaWriter) Write(image v1.Image, imageRef, output string, decrypt bool) error {
+func (ol *OllamaWriter) Write(image v1.Image, imageRef string, decrypt, unzip bool) error {
 	cn := types.CanonicalRef(imageRef)
 	ref, err := name.ParseReference(cn)
 	if err != nil {
 		panic(err)
 	}
 
-	manifestFolder := path.Join(output, "manifests", ref.Context().RegistryStr(), ref.Context().RepositoryStr())
-	blobsFolder := path.Join(output, "blobs")
+	manifestFolder := path.Join(ol.filePath, "manifests", ref.Context().RegistryStr(), ref.Context().RepositoryStr())
+	blobsFolder := path.Join(ol.filePath, "blobs")
 
 	// create the folders
 	err = os.MkdirAll(manifestFolder, os.ModePerm)

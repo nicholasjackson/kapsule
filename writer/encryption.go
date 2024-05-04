@@ -2,7 +2,6 @@ package writer
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -18,7 +17,7 @@ const (
 
 // wrapLayersWithEncryptedLayer wraps each layer in the image with an encrypted layer
 // and returns the new image
-func wrapLayersWithEncryptedLayer(i v1.Image, publicKeyFile string) (v1.Image, error) {
+func wrapLayersWithEncryptedLayer(i v1.Image, publicKey []byte) (v1.Image, error) {
 	base := empty.Image
 
 	layers, err := i.Layers()
@@ -26,13 +25,8 @@ func wrapLayersWithEncryptedLayer(i v1.Image, publicKeyFile string) (v1.Image, e
 		return nil, fmt.Errorf("unable to get layers from image: %s", err)
 	}
 
-	pubKeyBytes, err := os.ReadFile(publicKeyFile)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read public key file: %s", err)
-	}
-
 	for _, l := range layers {
-		el, err := crypto.NewEncryptedLayer(l, pubKeyBytes)
+		el, err := crypto.NewEncryptedLayer(l, publicKey)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create encrypted layer: %s", err)
 		}
