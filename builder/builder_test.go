@@ -30,7 +30,7 @@ func setupBuilder(t *testing.T) (builder Builder, mockParser *pm.Parser, context
 	model := &modelfile.ModelFile{
 		From:       "./model.gguf",
 		Template:   "[Inst] Something [/Inst]",
-		Parameters: map[string][]string{"a": []string{"1"}, "b": []string{"2"}},
+		Parameters: map[string][]string{"a": {"1"}, "b": {"2"}},
 	}
 
 	mp := &pm.Parser{}

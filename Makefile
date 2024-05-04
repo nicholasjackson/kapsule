@@ -89,3 +89,8 @@ test_pull_ollama_encrypted:
 		--password ${DOCKER_PASSWORD} \
 		--decryption-key ./test_fixtures/keys/private.key \
 		docker.io/nicholasjackson/mistral:encrypted
+
+test_run_acc:
+	jumppad up ./jumppad
+	TEST_ACC=1 go test -v -run "TestACC.*" ./... 
+	jumppad down

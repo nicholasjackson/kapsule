@@ -106,7 +106,7 @@ func newBuildCmd() *cobra.Command {
 						return
 					}
 				} else {
-					w := writer.NewOCIRegistry(logger, kp, registryUsername, registryPassword)
+					w := writer.NewOCIRegistry(logger, kp, registryUsername, registryPassword, insecure)
 
 					var err error
 					if encrypt {

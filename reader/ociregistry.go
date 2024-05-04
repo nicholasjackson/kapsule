@@ -1,7 +1,9 @@
 package reader
 
 import (
+	"crypto/tls"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/charmbracelet/log"
@@ -16,13 +18,15 @@ type OCIRegistry struct {
 	logger   *log.Logger
 	username string
 	password string
+	insecure bool
 }
 
-func NewOCIRegistry(logger *log.Logger, username, password string) *OCIRegistry {
+func NewOCIRegistry(logger *log.Logger, username, password string, insecure bool) *OCIRegistry {
 	return &OCIRegistry{
 		logger:   logger,
 		username: username,
 		password: password,
+		insecure: insecure,
 	}
 }
 
@@ -45,7 +49,14 @@ func (r *OCIRegistry) Pull(imageRef string) (v1.Image, error) {
 
 	auth := authn.FromConfig(*cfg)
 
-	return remote.Image(ref, remote.WithAuth(auth), remote.WithProgress(r.progressReport()))
+	transport := remote.DefaultTransport
+	if r.insecure {
+		transport.(*http.Transport).TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+	}
+
+	return remote.Image(ref, remote.WithAuth(auth), remote.WithProgress(r.progressReport()), remote.WithTransport(transport))
 }
 
 func (r *OCIRegistry) progressReport() chan v1.Update {

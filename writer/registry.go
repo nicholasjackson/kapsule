@@ -1,7 +1,9 @@
 package writer
 
 import (
+	"crypto/tls"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/charmbracelet/log"
@@ -17,14 +19,16 @@ type OCIRegistry struct {
 	username    string
 	password    string
 	keyProvider crypto.KeyProvider
+	insecure    bool
 }
 
-func NewOCIRegistry(logger *log.Logger, kp crypto.KeyProvider, username, password string) *OCIRegistry {
+func NewOCIRegistry(logger *log.Logger, kp crypto.KeyProvider, username, password string, insecure bool) *OCIRegistry {
 	return &OCIRegistry{
 		logger:      logger,
 		username:    username,
 		password:    password,
 		keyProvider: kp,
+		insecure:    insecure,
 	}
 }
 
@@ -43,6 +47,14 @@ func (r *OCIRegistry) Write(image v1.Image, imageRef string, decrypt, unzip bool
 	cfg, err := b.Authorization()
 	if err != nil {
 		return err
+	}
+
+	// create a custom transport so we can set the insecure flag
+	transport := remote.DefaultTransport
+	if r.insecure {
+		transport.(*http.Transport).TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
 	}
 
 	auth := authn.FromConfig(*cfg)
