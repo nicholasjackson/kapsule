@@ -11,6 +11,7 @@ build_all:
 
 test_build_ollama:
 	go run ./cmd build \
+		--debug \
 		--output ./output \
 		-f ./test_fixtures/testmodel/modelfile \
 		-t kapsule.io/nicholasjackson/mistral:tune \
@@ -19,6 +20,7 @@ test_build_ollama:
 
 test_build_local:
 	go run ./cmd build \
+		--debug \
 		--output ./output \
 		-f ./test_fixtures/testmodel/modelfile \
 		-t kapsule.io/nicholasjackson/mistral:tune \
@@ -26,6 +28,7 @@ test_build_local:
 
 test_build_local_encrypted:
 	go run ./cmd build \
+		--debug \
 		--output ./output \
 		--encryption-key ./test_fixtures/keys/public.key \
 		-f ./test_fixtures/testmodel/modelfile \
@@ -34,6 +37,7 @@ test_build_local_encrypted:
 
 test_push_docker:
 	go run ./cmd build \
+		--debug \
 		-f ./test_fixtures/testmodel/modelfile \
 		-t docker.io/nicholasjackson/mistral:plain \
 		--username ${DOCKER_USERNAME} \
@@ -42,6 +46,7 @@ test_push_docker:
 
 test_push_docker_encrypted:
 	go run ./cmd build \
+		--debug \
 		-f ./test_fixtures/testmodel/modelfile \
 		-t docker.io/nicholasjackson/mistral:encrypted \
 		--encryption-key ./test_fixtures/keys/public.key \
@@ -51,6 +56,7 @@ test_push_docker_encrypted:
 
 test_pull_oci:
 	go run ./cmd pull \
+		--debug \
 		--output ./output \
 		--username ${DOCKER_USERNAME} \
 		--password ${DOCKER_PASSWORD} \
@@ -58,6 +64,7 @@ test_pull_oci:
 
 test_pull_oci_encrypted:
 	go run ./cmd pull \
+		--debug \
 		--output ./output \
 		--decryption-key ./test_fixtures/keys/private.key \
 		--username ${DOCKER_USERNAME} \
@@ -66,6 +73,7 @@ test_pull_oci_encrypted:
 
 test_pull_ollama:
 	go run ./cmd pull \
+		--debug \
 		--output ./output \
 		--format ollama \
 		--username ${DOCKER_USERNAME} \
@@ -74,6 +82,7 @@ test_pull_ollama:
 
 test_pull_ollama_encrypted:
 	go run ./cmd pull \
+		--debug \
 		--output ./output \
 		--format ollama \
 		--username ${DOCKER_USERNAME} \

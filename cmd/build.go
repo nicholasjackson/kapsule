@@ -22,6 +22,7 @@ var encryptionVaultKey string
 var encryptionVaultAuthToken string
 var encryptionVaultAuthAddr string
 var unzip bool
+var debug bool
 
 func newBuildCmd() *cobra.Command {
 	buildCmd := &cobra.Command{
@@ -34,6 +35,10 @@ func newBuildCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := log.New(os.Stdout)
 			logger.SetReportTimestamp(false)
+
+			if debug {
+				logger.SetLevel(log.DebugLevel)
+			}
 
 			ctx := args[0]
 
@@ -54,14 +59,16 @@ func newBuildCmd() *cobra.Command {
 					return
 				}
 
-				err := writer.WriteToOllama(i, tag, outputFolder, decryptionKey)
+				w := writer.NewOllamaWriter(logger)
+				err := w.Write(i, tag, outputFolder, decryptionKey)
 				if err != nil {
 					log.Error("Failed to write image to ollama", "path", outputFolder, "error", err)
 					return
 				}
 			case "oci":
 				if outputFolder != "" {
-					err := writer.WriteToPath(i, outputFolder, encryptionKey, decryptionKey, unzip)
+					w := writer.NewPathWriter(logger)
+					err := w.Write(i, outputFolder, encryptionKey, decryptionKey, unzip)
 					if err != nil {
 						log.Error("Failed to write image to path", "path", outputFolder, "error", err)
 						return
@@ -93,6 +100,7 @@ func newBuildCmd() *cobra.Command {
 	buildCmd.Flags().StringVarP(&encryptionVaultAuthToken, "encryption-vault-auth-token", "", "", "The vault token to use for accessing the encryption key")
 	buildCmd.Flags().StringVarP(&encryptionVaultAuthAddr, "encryption-vault-addr", "", "", "The address of the vault server to use for accessing the encryption key")
 	buildCmd.Flags().BoolVarP(&unzip, "unzip", "", true, "Uncompresses layers when writing to disk")
+	buildCmd.Flags().BoolVarP(&debug, "debug", "", false, "Enable logging in debug mode")
 
 	return buildCmd
 }

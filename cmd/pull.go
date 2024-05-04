@@ -19,6 +19,10 @@ func newPullCmd() *cobra.Command {
 			logger := log.New(os.Stdout)
 			logger.SetReportTimestamp(false)
 
+			if debug {
+				logger.SetLevel(log.DebugLevel)
+			}
+
 			tag := args[0]
 
 			logger.Info("Pulling image", "tag", tag, "output", outputFolder)
@@ -37,8 +41,8 @@ func newPullCmd() *cobra.Command {
 					log.Error("Output folder '--output-folder' must be specified for Ollama format")
 					return
 				}
-
-				err := writer.WriteToOllama(i, tag, outputFolder, decryptionKey)
+				w := writer.NewOllamaWriter(logger)
+				err := w.Write(i, tag, outputFolder, decryptionKey)
 				if err != nil {
 					log.Error("Failed to write image to ollama", "path", outputFolder, "error", err)
 					return
@@ -49,7 +53,8 @@ func newPullCmd() *cobra.Command {
 					return
 				}
 
-				err := writer.WriteToPath(i, outputFolder, encryptionKey, decryptionKey, true)
+				w := writer.NewPathWriter(logger)
+				err := w.Write(i, outputFolder, encryptionKey, decryptionKey, true)
 				if err != nil {
 					log.Error("Failed to write image to path", "path", outputFolder, "error", err)
 					return
@@ -73,6 +78,7 @@ func newPullCmd() *cobra.Command {
 	pullCmd.Flags().StringVarP(&encryptionVaultKey, "encryption-vault-key", "", "", "The path to the exportable encryption key in vault to use for encrypting the image")
 	pullCmd.Flags().StringVarP(&encryptionVaultAuthToken, "encryption-vault-auth-token", "", "", "The vault token to use for accessing the encryption key")
 	pullCmd.Flags().StringVarP(&encryptionVaultAuthAddr, "encryption-vault-addr", "", "", "The address of the vault server to use for accessing the encryption key")
+	pullCmd.Flags().BoolVarP(&debug, "debug", "", false, "Enable logging in debug mode")
 
 	return pullCmd
 }

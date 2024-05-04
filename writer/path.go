@@ -6,27 +6,27 @@ import (
 	"io"
 	"os"
 
+	"github.com/charmbracelet/log"
+
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/match"
 )
 
-type Writer interface {
-	// Write to path writes the image to a local OCI image registry defined by output
-	// if no existing regitry exists at the output path, WriteToPath scaffolds a new
-	// regitstry before writing the image
-	WriteToPath(image v1.Image, output string) error
-	// PushToRegistry pushes the given image to a remote OCI image registry
-	PushToRegistry(imageRef string, image v1.Image, username, password string) error
+// WriterImpl is a concrete implementation of the Writer interface
+type PathWriter struct {
+	logger *log.Logger
 }
 
-// WriterImpl is a concrete implementation of the Writer interface
-type WriterImpl struct {
+func NewPathWriter(logger *log.Logger) *PathWriter {
+	return &PathWriter{
+		logger: logger,
+	}
 }
 
 // WriteToPath writes the image to a local OCI image registry defined by output
-func WriteToPath(image v1.Image, output, publicKeyPath, privateKeyPath string, unzip bool) error {
+func (pw *PathWriter) Write(image v1.Image, output, publicKeyPath, privateKeyPath string, unzip bool) error {
 	var err error
 	var p layout.Path
 
@@ -34,9 +34,11 @@ func WriteToPath(image v1.Image, output, publicKeyPath, privateKeyPath string, u
 		return fmt.Errorf("unzip is not supported when encrypting the image")
 	}
 
+	pw.logger.Info("Attempting to opening existing local path", "path", output)
 	p, err = layout.FromPath(output)
 	if err != nil {
 		// no index exists at the path, create a new index
+		pw.logger.Info("Path does not exist, creating new path", "path", output)
 		p, err = layout.Write(output, empty.Index)
 		if err != nil {
 			return err
@@ -47,7 +49,8 @@ func WriteToPath(image v1.Image, output, publicKeyPath, privateKeyPath string, u
 	// we do this by wrapping the image in a layers with an
 	// encrypted layer
 	if publicKeyPath != "" {
-		fmt.Println("Encrypting image")
+		pw.logger.Info("Encrypting layers with public key", "publicKeyPath", publicKeyPath)
+
 		ei, err := wrapLayersWithEncryptedLayer(image, publicKeyPath)
 		if err != nil {
 			return fmt.Errorf("unable to encrypt image: %s", err)
@@ -58,8 +61,9 @@ func WriteToPath(image v1.Image, output, publicKeyPath, privateKeyPath string, u
 	}
 
 	if privateKeyPath != "" {
+		pw.logger.Info("Decrypting layers with private key", "privateKeyPath", privateKeyPath)
+
 		// wrap the layers in a decrypted layer
-		fmt.Println("Decrypting image")
 		ei, err := wrapLayersWithDecryptedLayer(image, privateKeyPath)
 		if err != nil {
 			return fmt.Errorf("unable to encrypt image: %s", err)
@@ -77,18 +81,19 @@ func WriteToPath(image v1.Image, output, publicKeyPath, privateKeyPath string, u
 	// if we are encrypting the image we need to update the annotations
 	// as they contain information that is needed to decrypt the image
 	if publicKeyPath != "" {
-		fmt.Println("Updating annotations")
+		pw.logger.Info("Adding annotations from encryption process to manifest")
+
 		newImage, err := appendEncyptedLayerAnnotations(image)
 		if err != nil {
 			return fmt.Errorf("unable to update annotations: %s", err)
 		}
 
-		fmt.Println("Writing updated image")
 		digest, err := image.Digest()
 		if err != nil {
 			return fmt.Errorf("unable to get digest: %s", err)
 		}
 
+		pw.logger.Info("Updating image")
 		err = p.ReplaceImage(newImage, match.Digests(digest))
 		if err != nil {
 			return err
@@ -98,7 +103,8 @@ func WriteToPath(image v1.Image, output, publicKeyPath, privateKeyPath string, u
 	// are we decrypting the image
 	// do we need up unzip the layers?
 	if unzip {
-		fmt.Println("Unzipping layers")
+		pw.logger.Info("Unzipping layers before writing to disk")
+
 		err = unzipLayers(p, image)
 		if err != nil {
 			return fmt.Errorf("unable to unzip layers: %s", err)

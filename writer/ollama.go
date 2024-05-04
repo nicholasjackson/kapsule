@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/charmbracelet/log"
 	"github.com/containers/image/v5/manifest"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -16,7 +17,17 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-func WriteToOllama(image v1.Image, imageRef, output, privateKeyPath string) error {
+type OllamaWriter struct {
+	logger *log.Logger
+}
+
+func NewOllamaWriter(logger *log.Logger) *OllamaWriter {
+	return &OllamaWriter{
+		logger: logger,
+	}
+}
+
+func (ol *OllamaWriter) Write(image v1.Image, imageRef, output, privateKeyPath string) error {
 	cn := types.CanonicalRef(imageRef)
 	ref, err := name.ParseReference(cn)
 	if err != nil {
@@ -40,8 +51,9 @@ func WriteToOllama(image v1.Image, imageRef, output, privateKeyPath string) erro
 	var layers []v1.Layer
 	// if the layers are encrypted we need to wrap them in a decrypting layer
 	if privateKeyPath != "" {
+		ol.logger.Info("Decrypting layers using private key", "privateKeyPath", privateKeyPath)
+
 		// wrap the layers in a decrypted layer
-		fmt.Println("Decrypting image")
 		ei, err := wrapLayersWithDecryptedLayer(image, privateKeyPath)
 		if err != nil {
 			return fmt.Errorf("unable to encrypt image: %s", err)
@@ -61,7 +73,7 @@ func WriteToOllama(image v1.Image, imageRef, output, privateKeyPath string) erro
 
 	// add the layers
 	schemaLayers := []manifest.Schema2Descriptor{}
-	for _, l := range layers {
+	for i, l := range layers {
 		mt, err := l.MediaType()
 		if err != nil {
 			return fmt.Errorf("unable to get media type from layer: %s", err)
@@ -69,6 +81,8 @@ func WriteToOllama(image v1.Image, imageRef, output, privateKeyPath string) erro
 
 		switch mt {
 		case types.KAPSULE_MEDIA_TYPE_PARAMETERS:
+			ol.logger.Info("Converting Kapsule parameters to Ollama parameters")
+
 			// handle params differently as we need to convert
 			in, err := l.Compressed()
 			if err != nil {
@@ -86,16 +100,24 @@ func WriteToOllama(image v1.Image, imageRef, output, privateKeyPath string) erro
 				stream.WithMediaType(types.OLLAMA_MEDIA_TYPE_PARAMETERS),
 			)
 
-			l = paramLayer
+			layers[i] = paramLayer
 			fallthrough
 		default:
-			sd, err := writeLayerBlob(blobsFolder, l, string(mt))
+			lay := layers[i]
+
+			mt, _ := lay.MediaType()
+
+			sd, err := writeLayerBlob(blobsFolder, lay, string(mt))
 			if err != nil {
 				return fmt.Errorf("unable to write layer blob: %w", err)
 			}
+
+			ol.logger.Info("Written layer blob", "size", sd.Size, "digest", sd.Digest, "originalMediaType", mt, "newMediaType", sd.MediaType)
 			schemaLayers = append(schemaLayers, *sd)
 		}
 	}
+
+	ol.logger.Info("Creating Ollama config")
 
 	config := &types.OllamaConfig{
 		ModelFormat:   "gguf",
@@ -112,9 +134,12 @@ func WriteToOllama(image v1.Image, imageRef, output, privateKeyPath string) erro
 	}
 
 	for _, l := range layers {
+		mt, _ := l.MediaType()
+
+		ol.logger.Debug("Getting diff id from layer", "mediaType", mt)
 		diff, err := l.DiffID()
 		if err != nil {
-			return fmt.Errorf("unable to get diff id from layer: %s", err)
+			return fmt.Errorf("unable to get diff id from layer: %s %s", mt, err)
 		}
 
 		config.RootFS.DiffIDs = append(config.RootFS.DiffIDs, diff.String())
@@ -136,6 +161,8 @@ func WriteToOllama(image v1.Image, imageRef, output, privateKeyPath string) erro
 		return fmt.Errorf("unable to write config: %s", err)
 	}
 
+	ol.logger.Info("Creating Ollama image manifest")
+
 	configDescriptor := manifest.Schema2Descriptor{
 		MediaType: manifest.DockerV2Schema2ConfigMediaType,
 		Size:      int64(size),
@@ -152,14 +179,14 @@ func WriteToOllama(image v1.Image, imageRef, output, privateKeyPath string) erro
 	tag := ref.Identifier()
 	f, err := os.Create(path.Join(manifestFolder, tag))
 	if err != nil {
-		return fmt.Errorf("unable to open manefest file for writing: %s", err)
+		return fmt.Errorf("unable to open manifest file for writing: %s", err)
 	}
 
 	d := json.NewEncoder(f)
 
 	err = d.Encode(schema)
 	if err != nil {
-		return fmt.Errorf("unable to encode manefest: %s", err)
+		return fmt.Errorf("unable to encode manifest: %s", err)
 	}
 
 	return nil
@@ -198,7 +225,6 @@ func writeLayerBlob(blobPath string, layer v1.Layer, layerType string) (*manifes
 	// create the manifest
 	sd := manifest.Schema2Descriptor{}
 
-	fmt.Println("layer type", layerType)
 	// if the layer type is encrypted it will have a +enc suffix
 	// remove this before setting the media type
 	switch layerType {
