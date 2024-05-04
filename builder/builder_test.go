@@ -42,18 +42,18 @@ func setupBuilder(t *testing.T) (builder Builder, mockParser *pm.Parser, context
 }
 
 func TestBuildLoadsModelFile(t *testing.T) {
-	b, mb, _, _ := setupBuilder(t)
+	b, mb, ctx, _ := setupBuilder(t)
 
-	_, err := b.Build("./blah.modelfile", t.TempDir(), t.TempDir())
+	_, err := b.Build("./blah.modelfile", ctx)
 	require.NoError(t, err)
 
 	mb.AssertCalled(t, "Parse", "./blah.modelfile")
 }
 
 func TestBuildAddsModelLayer(t *testing.T) {
-	b, _, ctx, output := setupBuilder(t)
+	b, _, ctx, _ := setupBuilder(t)
 
-	img, err := b.Build("./blah.modelfile", ctx, output)
+	img, err := b.Build("./blah.modelfile", ctx)
 	require.NoError(t, err)
 	require.NotNil(t, img)
 
@@ -75,9 +75,9 @@ func TestBuildAddsModelLayer(t *testing.T) {
 }
 
 func TestBuildAddsTemplateLayer(t *testing.T) {
-	b, _, ctx, output := setupBuilder(t)
+	b, _, ctx, _ := setupBuilder(t)
 
-	img, err := b.Build("./blah.modelfile", ctx, output)
+	img, err := b.Build("./blah.modelfile", ctx)
 	require.NoError(t, err)
 	require.NotNil(t, img)
 
@@ -99,9 +99,9 @@ func TestBuildAddsTemplateLayer(t *testing.T) {
 }
 
 func TestBuildAddsParametersLayer(t *testing.T) {
-	b, _, ctx, output := setupBuilder(t)
+	b, _, ctx, _ := setupBuilder(t)
 
-	img, err := b.Build("./blah.modelfile", ctx, output)
+	img, err := b.Build("./blah.modelfile", ctx)
 	require.NoError(t, err)
 	require.NotNil(t, img)
 

@@ -27,8 +27,8 @@ func newPullCmd() *cobra.Command {
 
 			logger.Info("Pulling image", "tag", tag, "output", outputFolder)
 
-			r := reader.ReaderImpl{}
-			i, err := r.PullFromRegistry(tag, registryUsername, registryPassword)
+			r := reader.NewOCIRegistry(logger)
+			i, err := r.Pull(tag, registryUsername, registryPassword)
 			if err != nil {
 				log.Error("Failed to pull image", "error", err)
 				return

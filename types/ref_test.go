@@ -8,7 +8,7 @@ import (
 
 func TestCanonicalRefWithOnlyImage(t *testing.T) {
 	imageRef := "test"
-	expected := "kapsule/library/test:latest"
+	expected := "kapsule.io/library/test:latest"
 
 	actual := CanonicalRef(imageRef)
 	require.Equal(t, expected, actual)
@@ -16,7 +16,7 @@ func TestCanonicalRefWithOnlyImage(t *testing.T) {
 
 func TestCanonicalRefWithOnlyImageAndTag(t *testing.T) {
 	imageRef := "test:v1"
-	expected := "kapsule/library/test:v1"
+	expected := "kapsule.io/library/test:v1"
 
 	actual := CanonicalRef(imageRef)
 	require.Equal(t, expected, actual)
@@ -24,7 +24,7 @@ func TestCanonicalRefWithOnlyImageAndTag(t *testing.T) {
 
 func TestCanonicalRefWithNoRegistry(t *testing.T) {
 	imageRef := "nicholasjackson/test:v1"
-	expected := "kapsule/nicholasjackson/test:v1"
+	expected := "kapsule.io/nicholasjackson/test:v1"
 
 	actual := CanonicalRef(imageRef)
 	require.Equal(t, expected, actual)

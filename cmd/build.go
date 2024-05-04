@@ -74,7 +74,8 @@ func newBuildCmd() *cobra.Command {
 						return
 					}
 				} else {
-					err := writer.PushToRegistry(tag, i, registryUsername, registryPassword, encryptionKey)
+					w := writer.NewOCIRegistry(logger)
+					err := w.Push(tag, i, registryUsername, registryPassword, encryptionKey)
 					if err != nil {
 						log.Error("Failed to push image to remote registry", "error", err)
 						return

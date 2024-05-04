@@ -104,7 +104,6 @@ func wrapLayersWithDecryptedLayer(image v1.Image, privateKeyFile string) (v1.Ima
 				return nil, fmt.Errorf("layer is encrypted but missing encryption annotations")
 			}
 
-			fmt.Println("encrypted layer")
 			dl, err := crypto.NewDecryptedLayer(l, key, ann)
 			if err != nil {
 				return nil, fmt.Errorf("unable to create decrypted layer: %s", err)
