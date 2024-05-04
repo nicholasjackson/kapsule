@@ -20,7 +20,7 @@ already used to.
 
 It is not within the scope of Kapsule to convert models between their differing formats,
 for example converting a Hugging Face model into a gguf model. Kapsule will also not 
-con
+quantize models or perform any other transformations on the model itself.
 
 ## Modelfile
 
@@ -48,46 +48,102 @@ format, adding the template, system prompt and parameters.
 
 ## Building images with Kapsule
 
-To compose an image from the previous model the following command can be used.
+To compose an image from the previous model and to push it to an OCI registry
+the following command can be used. This pushes to the registry in plain format.
 
 ```bash
-# kapsule build -f <modelfile> <name> <context>
 kapsule build \
-  -f ./modelfile \
-  hub.docker.io/nicholasjackson/mymodel:latest \
-  .
+	--debug \
+	-f ./test_fixtures/testmodel/modelfile \
+	-t docker.io/nicholasjackson/mistral:plain \
+	--username ${DOCKER_USERNAME} \
+	--password ${DOCKER_PASSWORD} \
+	./test_fixtures/testmodel
 ```
 
-This can then be pushed to any OCI compatible registry, the layers
-of the image are encrypted using the given encryption key.
+To push an encrypted image to the registry, you can use the `--encrypt-key` flag
+to specify the path to the RSA public key. Kapsule uses OCIEncrypt to encrypt the
+layers of the image using asymetic encryption.
 
 ```bash
-kapsule push \
-  --encrypt-key ./key.pem \
-  hub.docker.io/nicholasjackson/mymodel:latest
+kapsule build \
+	--debug \
+	-f ./test_fixtures/testmodel/modelfile \
+	-t docker.io/nicholasjackson/mistral:encrypted \
+	--encryption-key ./test_fixtures/keys/public.key \
+	--username ${DOCKER_USERNAME} \
+	--password ${DOCKER_PASSWORD} \
+	./test_fixtures/testmodel
 ```
 
-To pull an encrypted image and store it in the Ollama cache, you can run the 
-opposite command `pull`.
+## Pulling images with Kapsule
+
+To pull an image from an OCI registry you can use the `kapsule pull` command.
+the following command would downlaod the image and write it in OCI format to the
+output directory.
 
 ```bash
 kapsule pull \
-  --encrypt-key ./key.pem \
-  --output ./ollama_cache \
-  --format ollama \
-  hub.docker.io/nicholasjackson/mymodel:latest
+	--debug \
+	--output ./output \
+	--username ${DOCKER_USERNAME} \
+	--password ${DOCKER_PASSWORD} \
+	docker.io/nicholasjackson/mistral:plain
+```
+
+To pull the same image but decrypt the layers you can use the `--decryption-key`
+flag to specify the path to the RSA private key.
+
+```bash
+kapsule pull \
+	--debug \
+	--output ./output \
+	--decryption-key ./test_fixtures/keys/private.key \
+	--username ${DOCKER_USERNAME} \
+	--password ${DOCKER_PASSWORD} \
+	docker.io/nicholasjackson/mistral:encrypted
+```
+
+## Exporting models with Kapsule
+To pull a model and to export to a different format you can use the
+pull command with the optional `--format` flag. The following command
+would pull the model and export it to the Ollama format.
+
+```bash
+kapsule pull \
+	--debug \
+	--output ./output \
+	--format ollama \
+	--username ${DOCKER_USERNAME} \
+	--password ${DOCKER_PASSWORD} \
+	docker.io/nicholasjackson/mistral:plain
+```
+
+And to pull an encrypted model and export it to the Ollama format you can use
+the `--decryption-key` flag.
+
+```bash
+kapsule pull \
+	--debug \
+	--output ./output \
+	--format ollama \
+	--username ${DOCKER_USERNAME} \
+	--password ${DOCKER_PASSWORD} \
+	--decryption-key ./test_fixtures/keys/private.key \
+	docker.io/nicholasjackson/mistral:encrypted
 ```
 
 ## WORKING-ISH:
-[] Initial model specification  
-[] Building Kapsule images  
-[] Push models to OCI registries  
-[] Pull models from OCI registries  
+[x] Initial model specification  
+[x] Building Kapsule images  
+[x] Push models to OCI registries  
+[x] Pull models from OCI registries  
+[x] Ollama export format  
+[x] Layer encryption / Decryption
+[x] RSA/ECDS keys support
 
 ## TODO:
-  [] Layer encryption plugin using Hashicorp Vault  
-  [] Layer encryption plugin using RSA/ECDS keys  
-  [] Complete Modelfile specification  
-  [] Ollama export format  
-  [] Huggingface export format  
-  [] PyTorch export format  
+[] Hashicorp Vault key support
+[] Complete Modelfile specification  
+[] Huggingface export format  
+[] PyTorch export format  
