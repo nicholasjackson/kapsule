@@ -37,7 +37,7 @@ jobs:
         run: |
           curl https://jumppad.dev/install | bash
           jumppad up ./jumppad
-	        TEST_ACC=1 go test -v -run "TestACC.*" ./... 
+          TEST_ACC=1 go test -v -run "TestACC.*" ./... 
           jumppad down --force
       
       - name: Upload artifacts
