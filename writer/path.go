@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/log"
-	"github.com/nicholasjackson/kapsule/crypto"
+	"github.com/nicholasjackson/kapsule/crypto/keyproviders"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
@@ -18,11 +18,11 @@ import (
 // WriterImpl is a concrete implementation of the Writer interface
 type PathWriter struct {
 	logger      *log.Logger
-	keyProvider crypto.KeyProvider
+	keyProvider keyproviders.Provider
 	filePath    string
 }
 
-func NewPathWriter(logger *log.Logger, keyProvider crypto.KeyProvider, path string) *PathWriter {
+func NewPathWriter(logger *log.Logger, keyProvider keyproviders.Provider, path string) *PathWriter {
 	return &PathWriter{
 		logger:      logger,
 		keyProvider: keyProvider,

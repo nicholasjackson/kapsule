@@ -1,4 +1,4 @@
-package crypto
+package keyproviders
 
 import (
 	"fmt"
@@ -7,19 +7,19 @@ import (
 	"github.com/containers/ocicrypt/utils"
 )
 
-type KeyProviderFile struct {
+type File struct {
 	publicKeyPath  string
 	privateKeyPath string
 }
 
-func NewKeyProviderFile(publicKeyPath, privateKeyPath string) *KeyProviderFile {
-	return &KeyProviderFile{
+func NewFile(publicKeyPath, privateKeyPath string) *File {
+	return &File{
 		publicKeyPath:  publicKeyPath,
 		privateKeyPath: privateKeyPath,
 	}
 }
 
-func (kp *KeyProviderFile) PublicKey() ([]byte, error) {
+func (kp *File) PublicKey() ([]byte, error) {
 	if kp.publicKeyPath == "" {
 		return nil, fmt.Errorf("no public key configured")
 	}
@@ -36,7 +36,7 @@ func (kp *KeyProviderFile) PublicKey() ([]byte, error) {
 	return d, nil
 }
 
-func (kp *KeyProviderFile) PrivateKey() ([]byte, error) {
+func (kp *File) PrivateKey() ([]byte, error) {
 	if kp.privateKeyPath == "" {
 		return nil, fmt.Errorf("no private key configured")
 	}

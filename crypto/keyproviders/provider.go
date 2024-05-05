@@ -1,6 +1,6 @@
-package crypto
+package keyproviders
 
-type KeyProvider interface {
+type Provider interface {
 	// PublicKey returns the public key
 	PublicKey() ([]byte, error)
 	// PrivateKey returns the private key

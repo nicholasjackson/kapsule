@@ -11,18 +11,18 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/nicholasjackson/kapsule/crypto"
+	"github.com/nicholasjackson/kapsule/crypto/keyproviders"
 )
 
 type OCIRegistry struct {
 	logger      *log.Logger
 	username    string
 	password    string
-	keyProvider crypto.KeyProvider
+	keyProvider keyproviders.Provider
 	insecure    bool
 }
 
-func NewOCIRegistry(logger *log.Logger, kp crypto.KeyProvider, username, password string, insecure bool) *OCIRegistry {
+func NewOCIRegistry(logger *log.Logger, kp keyproviders.Provider, username, password string, insecure bool) *OCIRegistry {
 	return &OCIRegistry{
 		logger:      logger,
 		username:    username,
