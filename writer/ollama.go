@@ -13,22 +13,22 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/stream"
-	"github.com/nicholasjackson/kapsule/crypto"
+	"github.com/nicholasjackson/kapsule/crypto/keyproviders"
 	"github.com/nicholasjackson/kapsule/types"
 	"github.com/opencontainers/go-digest"
 )
 
 type OllamaWriter struct {
 	logger      *log.Logger
-	keyProvider crypto.KeyProvider
-	filePath string
+	keyProvider keyproviders.Provider
+	filePath    string
 }
 
-func NewOllamaWriter(logger *log.Logger, kp crypto.KeyProvider, filePath string) *OllamaWriter {
+func NewOllamaWriter(logger *log.Logger, kp keyproviders.Provider, filePath string) *OllamaWriter {
 	return &OllamaWriter{
 		logger:      logger,
 		keyProvider: kp,
-		filePath: filePath,
+		filePath:    filePath,
 	}
 }
 

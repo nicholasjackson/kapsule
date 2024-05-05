@@ -13,6 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Setup Go 1.21.x
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21.x'
+
       - name: Set keys
         run: |
           echo "${{secrets.QUILL_SIGN_P12}}" | base64 -d  > ./cert.p12
@@ -27,6 +32,13 @@ jobs:
           module: ./dagger
           args: all --output=./output --src=. --github-token=GITHUB_TOKEN --notorize-cert=./cert.p12 --notorize-cert-password=QUILL_SIGN_PASSWORD --notorize-key=./key.p8 --notorize-id=${{secrets.QUILL_NOTARY_KEY_ID}} --notorize-issuer=${{secrets.QUILL_NOTARY_ISSUER}}
           version: "0.11.0"
+
+      - name: Acceptance Tests
+        run: |
+          curl https://jumppad.dev/install | bash
+          jumppad up ./jumppad
+          TEST_ACC=1 go test -v -run "TestACC.*" ./... 
+          jumppad down --force
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
@@ -34,14 +46,6 @@ jobs:
           name: archives
           path: |
             ./output
-    
-      - name: Send status to Discord
-        uses: sarisia/actions-status-discord@v1
-        if: always()
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          tile: ${{ github.job_id }}
-          description: "Build application"
   
   release:
     name: Create GitHub Release

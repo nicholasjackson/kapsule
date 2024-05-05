@@ -93,4 +93,4 @@ test_pull_ollama_encrypted:
 test_run_acc:
 	jumppad up ./jumppad
 	TEST_ACC=1 go test -v -run "TestACC.*" ./... 
-	jumppad down
+	jumppad down --force

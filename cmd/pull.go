@@ -29,6 +29,7 @@ func newPullCmd() *cobra.Command {
 			kp, err := getKeyProvider(
 				encryptionKey,
 				decryptionKey,
+				encryptionVaultPath,
 				encryptionVaultKey,
 				encryptionVaultAuthToken,
 				encryptionVaultAuthAddr,
@@ -93,9 +94,10 @@ func newPullCmd() *cobra.Command {
 	pullCmd.Flags().StringVarP(&registryPassword, "password", "", "", "Specify the password for the remote registry")
 	pullCmd.Flags().StringVarP(&encryptionKey, "encryption-key", "", "", "The encryption key to use for encrypting the image")
 	pullCmd.Flags().StringVarP(&decryptionKey, "decryption-key", "", "", "The decryption key to use for encrypting the image, RSA private key")
-	pullCmd.Flags().StringVarP(&encryptionVaultKey, "encryption-vault-key", "", "", "The path to the exportable encryption key in vault to use for encrypting the image")
-	pullCmd.Flags().StringVarP(&encryptionVaultAuthToken, "encryption-vault-auth-token", "", "", "The vault token to use for accessing the encryption key")
-	pullCmd.Flags().StringVarP(&encryptionVaultAuthAddr, "encryption-vault-addr", "", "", "The address of the vault server to use for accessing the encryption key")
+	pullCmd.Flags().StringVarP(&encryptionVaultPath, "encryption-vault-path", "", "", "The path for the transit secrets engine in vault to use for encrypting and decrypting the image")
+	pullCmd.Flags().StringVarP(&encryptionVaultKey, "encryption-vault-key", "", "", "The name of the key in vault to use for encrypting and decrypting the image")
+	pullCmd.Flags().StringVarP(&encryptionVaultAuthToken, "encryption-vault-auth-token", "", "", "The vault token to use for accessing the encryption and decryption key")
+	pullCmd.Flags().StringVarP(&encryptionVaultAuthAddr, "encryption-vault-addr", "", "", "The address of the vault server to use for accessing the encryption / decryption key")
 	pullCmd.Flags().BoolVarP(&debug, "debug", "", false, "Enable logging in debug mode")
 
 	return pullCmd

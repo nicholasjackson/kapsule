@@ -1,4 +1,4 @@
-package crypto
+package keyproviders
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestReturnsErrorWhenNoPublicKey(t *testing.T) {
-	kp := NewKeyProviderFile("./notexists.key", "")
+	kp := NewFile("./notexists.key", "")
 
 	_, err := kp.PublicKey()
 
@@ -15,7 +15,7 @@ func TestReturnsErrorWhenNoPublicKey(t *testing.T) {
 }
 
 func TestReturnsErrorWhenNotPublicKey(t *testing.T) {
-	kp := NewKeyProviderFile("../test_fixtures/keys/private.key", "")
+	kp := NewFile("../../test_fixtures/keys/private.key", "")
 
 	_, err := kp.PublicKey()
 
@@ -23,7 +23,7 @@ func TestReturnsErrorWhenNotPublicKey(t *testing.T) {
 }
 
 func TestReturnsPublicKey(t *testing.T) {
-	kp := NewKeyProviderFile("../test_fixtures/keys/public.key", "")
+	kp := NewFile("../../test_fixtures/keys/public.key", "")
 
 	_, err := kp.PublicKey()
 
@@ -31,7 +31,7 @@ func TestReturnsPublicKey(t *testing.T) {
 }
 
 func TestReturnsErrorWhenNoPrivateKey(t *testing.T) {
-	kp := NewKeyProviderFile("", "./notexists.key")
+	kp := NewFile("", "./notexists.key")
 
 	_, err := kp.PrivateKey()
 
@@ -39,7 +39,7 @@ func TestReturnsErrorWhenNoPrivateKey(t *testing.T) {
 }
 
 func TestReturnsErrorWhenNotPrivateKey(t *testing.T) {
-	kp := NewKeyProviderFile("", "../test_fixtures/keys/public.key")
+	kp := NewFile("", "../../test_fixtures/keys/public.key")
 
 	_, err := kp.PrivateKey()
 
@@ -47,7 +47,7 @@ func TestReturnsErrorWhenNotPrivateKey(t *testing.T) {
 }
 
 func TestReturnsPrivateKey(t *testing.T) {
-	kp := NewKeyProviderFile("", "../test_fixtures/keys/private.key")
+	kp := NewFile("", "../../test_fixtures/keys/private.key")
 
 	_, err := kp.PrivateKey()
 

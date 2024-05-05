@@ -76,6 +76,35 @@ kapsule build \
 	./test_fixtures/testmodel
 ```
 
+### Full command list
+
+```bash
+kapsule build --help
+Builds an OCI image for a model using the specified context and output format.
+
+Usage:
+  kapsule build [flags]
+
+Flags:
+      --debug                                Enable logging in debug mode
+      --decryption-key string                The decryption key to use for encrypting the image, RSA private key
+      --encryption-key string                The encryption key to use for encrypting the image, RSA public key
+      --encryption-vault-addr string         The address of the vault server to use for accessing the encryption key
+      --encryption-vault-auth-token string   The vault token to use for accessing the encryption key
+      --encryption-vault-key string          The name of exportable encryption key in Vault to use for encrypting and decrypting the image
+      --encryption-vault-namespace string    The namespace for the vault server to use for accessing the encryption key
+      --encryption-vault-path string         The path to the transit secrets endpoint for encrypting and decryupting the image
+  -f, --file string                          Specify the model file for the build (default "ModelFile")
+      --format string                        Specify the output format for the built image, defaults to OCI image format, options: [ollama, oci] (default "oci")
+  -h, --help                                 help for build
+      --insecure                             Push to an insecure registry
+  -o, --output string                        Specify the output folder for the built image, if not specified the image will be pushed to a remote registry
+      --password string                      Specify the password for the remote registry
+  -t, --tag string                           Specify the tag for the built image i.e. docker.io/nicholasjackson/llm_test:latest
+      --unzip                                Uncompresses layers when writing to disk (default true)
+      --username string                      Specify the username for the remote registry
+```
+
 ## Pulling images with Kapsule
 
 To pull an image from an OCI registry you can use the `kapsule pull` command.
@@ -133,6 +162,32 @@ kapsule pull \
 	docker.io/nicholasjackson/mistral:encrypted
 ```
 
+### Full command list
+
+```bash
+kapsule pull --help
+Pull an OCI image from a remote registry
+
+Usage:
+  kapsule pull [flags]
+
+Flags:
+      --debug                                Enable logging in debug mode
+      --decryption-key string                The decryption key to use for encrypting the image, RSA private key
+      --encryption-key string                The encryption key to use for encrypting the image
+      --encryption-vault-addr string         The address of the vault server to use for accessing the encryption / decryption key
+      --encryption-vault-auth-token string   The vault token to use for accessing the encryption and decryption key
+      --encryption-vault-key string          The name of the key in vault to use for encrypting and decrypting the image
+      --encryption-vault-path string         The path for the transit secrets engine in vault to use for encrypting and decrypting the image
+      --format string                        Specify the output format for the built image, defaults to OCI image format, options: [ollama, oci] (default "oci")
+  -h, --help                                 help for pull
+      --insecure                             Push to an insecure registry
+  -o, --output string                        Specify the output folder for the built image, if not specified the image will be pushed to a remote registry
+      --password string                      Specify the password for the remote registry
+      --unzip                                Uncompresses layers when writing to disk (default true)
+      --username string                      Specify the username for the remote registry
+```
+
 ## WORKING-ISH:
 [x] Initial model specification  
 [x] Building Kapsule images  
@@ -141,9 +196,9 @@ kapsule pull \
 [x] Ollama export format  
 [x] Layer encryption / Decryption
 [x] RSA/ECDS keys support
+[x] Hashicorp Vault key support
 
 ## TODO:
-[] Hashicorp Vault key support
 [] Complete Modelfile specification  
 [] Huggingface export format  
 [] PyTorch export format  

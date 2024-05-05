@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/log"
 
 	"github.com/nicholasjackson/kapsule/builder"
-	"github.com/nicholasjackson/kapsule/crypto"
+	"github.com/nicholasjackson/kapsule/crypto/keyproviders"
 	"github.com/nicholasjackson/kapsule/writer"
 	"github.com/stretchr/testify/require"
 )
@@ -17,7 +17,7 @@ func setupRegistry(t *testing.T, ref string) (*OCIRegistry, *log.Logger) {
 	l.SetLevel(log.DebugLevel)
 
 	// create a builder and push to a registry
-	kp := crypto.NewKeyProviderFile("../test_fixtures/testmodel/public.key", "../test_fixtures/testmodel/private.key")
+	kp := keyproviders.NewFile("../test_fixtures/testmodel/public.key", "../test_fixtures/testmodel/private.key")
 	b := builder.NewBuilder()
 	w := writer.NewOCIRegistry(l, kp, "admin", "password", true)
 
