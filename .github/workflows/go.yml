@@ -32,7 +32,7 @@ jobs:
           module: ./dagger
           args: all --output=./output --src=. --github-token=GITHUB_TOKEN --notorize-cert=./cert.p12 --notorize-cert-password=QUILL_SIGN_PASSWORD --notorize-key=./key.p8 --notorize-id=${{secrets.QUILL_NOTARY_KEY_ID}} --notorize-issuer=${{secrets.QUILL_NOTARY_ISSUER}}
           version: "0.11.0"
-      
+
       - name: Acceptance Tests
         run: |
           curl https://jumppad.dev/install | bash
@@ -46,14 +46,6 @@ jobs:
           name: archives
           path: |
             ./output
-    
-      - name: Send status to Discord
-        uses: sarisia/actions-status-discord@v1
-        if: always()
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          tile: ${{ github.job_id }}
-          description: "Build application"
   
   release:
     name: Create GitHub Release
