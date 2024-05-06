@@ -3,10 +3,13 @@ package main
 import (
 	"fmt"
 
+	"github.com/charmbracelet/log"
+
 	"github.com/nicholasjackson/kapsule/crypto/keyproviders"
 )
 
 func getKeyProvider(
+	l *log.Logger,
 	publicKey,
 	privateKey,
 	encryptionVaultPath,
@@ -29,7 +32,7 @@ func getKeyProvider(
 	}
 
 	if encryptionVaultPath != "" && encryptionVaultKey != "" && encryptionVaultAuthToken != "" && encryptionVaultAuthAddr != "" {
-		return keyproviders.NewVault(nil, encryptionVaultPath, encryptionVaultKey, "", encryptionVaultAuthToken, encryptionVaultAuthAddr, encryptionVaultAuthNamespace), nil
+		return keyproviders.NewVault(l, encryptionVaultPath, encryptionVaultKey, "", encryptionVaultAuthToken, encryptionVaultAuthAddr, encryptionVaultAuthNamespace), nil
 	}
 
 	return nil, fmt.Errorf("you must specify either a file based key or a vault key")
