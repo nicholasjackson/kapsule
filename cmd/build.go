@@ -44,6 +44,7 @@ func newBuildCmd() *cobra.Command {
 
 			// are we using encryption, if so build the key provider
 			kp, err := getKeyProvider(
+				logger,
 				encryptionKey,
 				decryptionKey,
 				encryptionVaultPath,
