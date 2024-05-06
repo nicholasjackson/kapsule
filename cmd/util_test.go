@@ -8,7 +8,7 @@ import (
 )
 
 func TestProviderReturnsErrorWithFileParamsAndVaultParams(t *testing.T) {
-	_, err := getKeyProvider("public", "private", "/keys/", "kapsule", "token", "addr", "namespace")
+	_, err := getKeyProvider(nil, "public", "private", "/keys/", "kapsule", "token", "addr", "namespace")
 	require.Error(t, err)
 }
 
