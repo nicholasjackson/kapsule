@@ -132,20 +132,17 @@ func (r *OCIRegistry) WriteEncrypted(image v1.Image, imageRef string) error {
 
 func (r *OCIRegistry) progressReport() chan v1.Update {
 	ch := make(chan v1.Update, 1)
-	total := int64(0)
 	completed := int64(0)
 
-	t := time.AfterFunc(5*time.Second, func() {
-		percentage := "0%"
-
-		if completed > 0 && total > 0 {
-			p := int((completed / total) * 100)
-
-			percentage = fmt.Sprintf("%d%%", p)
-
-			r.logger.Info("Pushing image", "complete", percentage, "total", total, "completed", completed)
+	// we can't calculate the percentage as we do not know the total size of the
+	// image, so we will just report the number bytes pushed
+	t := time.NewTicker(2 * time.Second)
+	go func() {
+		for {
+			<-t.C
+			r.logger.Info("Pushing image", "complete", byteCountSI(completed))
 		}
-	})
+	}()
 
 	go func() {
 		for {
@@ -156,10 +153,23 @@ func (r *OCIRegistry) progressReport() chan v1.Update {
 				return
 			}
 
-			total = update.Total
 			completed = update.Complete
 		}
 	}()
 
 	return ch
+}
+
+func byteCountSI(b int64) string {
+	const unit = 1000
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB",
+		float64(b)/float64(div), "kMGTPE"[exp])
 }

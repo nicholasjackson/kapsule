@@ -1,4 +1,5 @@
 FROM ./test.gguf
+#FROM ./finetuned-Q4_K_M.gguf
 
 TEMPLATE """[INST] {{ .System }} {{ .Prompt }} [/INST]"""
 
