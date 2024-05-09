@@ -194,7 +194,7 @@ Flags:
 [x] Push models to OCI registries  
 [x] Pull models from OCI registries  
 [x] Ollama export format  
-[x] Layer encryption / Decryption
+[x] Layer encryption / Decryption  
 [x] RSA/ECDS keys support  
 [x] Hashicorp Vault key support
 
