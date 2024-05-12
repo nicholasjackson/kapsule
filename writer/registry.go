@@ -113,7 +113,8 @@ func (r *OCIRegistry) WriteEncrypted(image v1.Image, imageRef string) error {
 	}
 
 	// remote.WithProgress to write the image with progress
-	r.logger.Info("Pushing image", "imageRef", imageRef)
+	r.logger.Info("Pushing image", "imageRef", imageRef, "insecure", r.insecure)
+
 	err = remote.Write(ref, image, remote.WithAuth(auth), remote.WithProgress(r.progressReport()), remote.WithTransport(transport))
 	if err != nil {
 		return fmt.Errorf("unable to write image to registry: %s", err)
@@ -130,6 +131,7 @@ func (r *OCIRegistry) WriteEncrypted(image v1.Image, imageRef string) error {
 	}
 
 	r.logger.Info("Updating remote image", "imageRef", imageRef)
+
 	err = remote.Write(ref, newImage, remote.WithAuth(auth), remote.WithProgress(r.progressReport()))
 	if err != nil {
 		return fmt.Errorf("unable to write image to registry: %s", err)

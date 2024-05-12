@@ -48,10 +48,11 @@ test_push_docker_encrypted:
 	go run ./cmd build \
 		--debug \
 		-f ./test_fixtures/testmodel/modelfile \
-		-t docker.io/nicholasjackson/mistral:encrypted \
+		-t auth.container.local.jmpd.in:5001/testmodel:enc \
 		--encryption-key ./test_fixtures/keys/public.key \
-		--username ${DOCKER_USERNAME} \
-		--password ${DOCKER_PASSWORD} \
+		--username admin \
+		--password password \
+		--insecure \
 		./test_fixtures/testmodel
 
 test_pull_oci:

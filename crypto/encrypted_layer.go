@@ -143,14 +143,11 @@ func (el *EncryptedLayer) Uncompressed() (io.ReadCloser, error) {
 }
 
 func (el *EncryptedLayer) Size() (int64, error) {
-	if el.done {
-		return int64(el.size), nil
+	if el.size == 0 {
+		return 0, stream.ErrNotComputed
 	}
 
-	// if we have not yet completed the encryption process we cannot get the digest
-	// so we need to return a special error so that the writer package
-	// will know to fetch this info later
-	return -1, stream.ErrNotComputed
+	return int64(el.size), nil
 }
 
 func (el *EncryptedLayer) MediaType() (types.MediaType, error) {

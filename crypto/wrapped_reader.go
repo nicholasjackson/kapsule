@@ -61,10 +61,6 @@ func (er *wrappedReader) Close() error {
 // Size returns the size of the data read from the reader,
 // this method can only be called once the reader is closed.
 func (er *wrappedReader) Size() (int, error) {
-	if !er.done {
-		return 0, fmt.Errorf("size is not available until the reader is closed")
-	}
-
 	return er.c.n, nil
 }
 
