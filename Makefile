@@ -35,16 +35,17 @@ test_build_local_encrypted:
 		-t kapsule.io/nicholasjackson/mistral:tune \
 		./test_fixtures/testmodel
 
-test_push_docker:
+test_push_oci:
 	go run ./cmd build \
 		--debug \
 		-f ./test_fixtures/testmodel/modelfile \
-		-t docker.io/nicholasjackson/mistral:plain \
-		--username ${DOCKER_USERNAME} \
-		--password ${DOCKER_PASSWORD} \
+		-t auth.container.local.jmpd.in:5001/testmodel:plain \
+		--username admin \
+		--password password \
+		--insecure \
 		./test_fixtures/testmodel
 
-test_push_docker_encrypted:
+test_push_oci_encrypted:
 	go run ./cmd build \
 		--debug \
 		-f ./test_fixtures/testmodel/modelfile \
@@ -59,37 +60,41 @@ test_pull_oci:
 	go run ./cmd pull \
 		--debug \
 		--output ./output \
-		--username ${DOCKER_USERNAME} \
-		--password ${DOCKER_PASSWORD} \
-		docker.io/nicholasjackson/mistral:plain
+		--username admin \
+		--password password \
+		--insecure \
+		auth.container.local.jmpd.in:5001/testmodel:plain
 
 test_pull_oci_encrypted:
 	go run ./cmd pull \
 		--debug \
 		--output ./output \
 		--decryption-key ./test_fixtures/keys/private.key \
-		--username ${DOCKER_USERNAME} \
-		--password ${DOCKER_PASSWORD} \
-		docker.io/nicholasjackson/mistral:encrypted
+		--username admin \
+		--password password \
+		--insecure \
+		auth.container.local.jmpd.in:5001/testmodel:enc
 
 test_pull_ollama:
 	go run ./cmd pull \
 		--debug \
 		--output ./output \
 		--format ollama \
-		--username ${DOCKER_USERNAME} \
-		--password ${DOCKER_PASSWORD} \
-		docker.io/nicholasjackson/mistral:plain
+		--username admin \
+		--password password \
+		--insecure \
+		auth.container.local.jmpd.in:5001/testmodel:plain
 
 test_pull_ollama_encrypted:
 	go run ./cmd pull \
 		--debug \
 		--output ./output \
 		--format ollama \
-		--username ${DOCKER_USERNAME} \
-		--password ${DOCKER_PASSWORD} \
 		--decryption-key ./test_fixtures/keys/private.key \
-		docker.io/nicholasjackson/mistral:encrypted
+		--username admin \
+		--password password \
+		--insecure \
+		auth.container.local.jmpd.in:5001/testmodel:enc
 
 test_run_acc:
 	jumppad up ./jumppad

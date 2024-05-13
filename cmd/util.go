@@ -12,11 +12,16 @@ func getKeyProvider(
 	l *log.Logger,
 	publicKey,
 	privateKey,
-	encryptionVaultPath,
 	encryptionVaultKey,
+	encryptionVaultPath,
 	encryptionVaultAuthToken,
 	encryptionVaultAuthAddr,
 	encryptionVaultAuthNamespace string) (keyproviders.Provider, error) {
+
+	// if no key is specified return nil provider
+	if publicKey == "" && privateKey == "" && encryptionVaultKey == "" {
+		return &keyproviders.NullProvider{}, nil
+	}
 
 	// ensure that the user has not specified both a file based key and a vault key
 	if (publicKey != "" || privateKey != "") && encryptionVaultKey != "" {

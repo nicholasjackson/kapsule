@@ -30,6 +30,14 @@ func TestCanonicalRefWithNoRegistry(t *testing.T) {
 	require.Equal(t, expected, actual)
 }
 
+func TestCanonicalRefWithRegistryNoOrg(t *testing.T) {
+	imageRef := "nicholasjackson.io/test:v1"
+	expected := "nicholasjackson.io/library/test:v1"
+
+	actual := CanonicalRef(imageRef)
+	require.Equal(t, expected, actual)
+}
+
 func TestCanonicalRefValid(t *testing.T) {
 	imageRef := "docker.io/nicholasjackson/test:v1"
 	expected := "docker.io/nicholasjackson/test:v1"

@@ -13,7 +13,7 @@ func TestProviderReturnsErrorWithFileParamsAndVaultParams(t *testing.T) {
 }
 
 func TestProviderReturnsErrorWithMissingVaultParams(t *testing.T) {
-	_, err := getKeyProvider(nil, "", "", "/keys/", "kapsule", "", "", "")
+	_, err := getKeyProvider(nil, "", "", "kapsule", "", "", "", "")
 	require.Error(t, err)
 
 	_, err = getKeyProvider(nil, "", "", "/keys/", "", "addr", "", "")
@@ -27,8 +27,15 @@ func TestProviderReturnsFileProvider(t *testing.T) {
 	require.IsType(t, &keyproviders.File{}, kp)
 }
 func TestProviderReturnsVaultProvider(t *testing.T) {
-	kp, err := getKeyProvider(nil, "", "", "transit", "kapsule", "addr", "root", "")
+	kp, err := getKeyProvider(nil, "", "", "kapsule", "transit", "http://addr", "root", "")
 	require.NoError(t, err)
 	require.NotNil(t, kp)
 	require.IsType(t, &keyproviders.Vault{}, kp)
+}
+
+func TestProviderReturnsNullProvider(t *testing.T) {
+	kp, err := getKeyProvider(nil, "", "", "", "", "", "", "")
+	require.NoError(t, err)
+	require.NotNil(t, kp)
+	require.IsType(t, &keyproviders.NullProvider{}, kp)
 }
