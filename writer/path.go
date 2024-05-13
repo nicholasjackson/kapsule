@@ -12,7 +12,6 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
-	"github.com/google/go-containerregistry/pkg/v1/match"
 )
 
 // WriterImpl is a concrete implementation of the Writer interface
@@ -103,19 +102,13 @@ func (pw *PathWriter) WriteEncrypted(image v1.Image, imageRef string) error {
 	}
 
 	pw.logger.Info("Adding annotations from encryption process to manifest")
-
 	newImage, err := appendEncyptedLayerAnnotations(image)
 	if err != nil {
 		return fmt.Errorf("unable to update annotations: %s", err)
 	}
 
-	digest, err := image.Digest()
-	if err != nil {
-		return fmt.Errorf("unable to get digest: %s", err)
-	}
-
 	pw.logger.Info("Updating image")
-	err = p.ReplaceImage(newImage, match.Digests(digest))
+	err = p.WriteImage(newImage)
 	if err != nil {
 		return err
 	}

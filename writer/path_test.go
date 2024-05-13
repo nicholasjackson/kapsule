@@ -8,12 +8,12 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/nicholasjackson/kapsule/builder"
 	"github.com/nicholasjackson/kapsule/crypto/keyproviders"
+	"github.com/nicholasjackson/kapsule/testutils"
 	"github.com/stretchr/testify/require"
 )
 
 func setupPathFileKp(t *testing.T, ref string) (*PathWriter, *log.Logger, string, v1.Image) {
-	l := log.New(os.Stdout)
-	l.SetLevel(log.DebugLevel)
+	l := testutils.CreateTestLogger(t)
 
 	// create a builder and push to a registry
 	kp := keyproviders.NewFile("../test_fixtures/keys/public.key", "../test_fixtures/keys/private.key")
@@ -29,8 +29,7 @@ func setupPathFileKp(t *testing.T, ref string) (*PathWriter, *log.Logger, string
 }
 
 func setupPathVaultKp(t *testing.T, ref string) (*PathWriter, *log.Logger, string, v1.Image) {
-	l := log.New(os.Stdout)
-	l.SetLevel(log.DebugLevel)
+	l := testutils.CreateTestLogger(t)
 
 	// create a builder and push to a registry
 	kp := keyproviders.NewVault(l, "transit", "kapsule", "latest", "root", "http://vault.container.local.jmpd.in:8200", "")

@@ -4,14 +4,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/charmbracelet/log"
 	"github.com/containers/ocicrypt/utils"
+	"github.com/nicholasjackson/kapsule/testutils"
 	"github.com/stretchr/testify/require"
 )
 
 func setupVault(t *testing.T, key string) *Vault {
-	l := log.New(os.Stdout)
-	l.SetLevel(log.DebugLevel)
+	l := testutils.CreateTestLogger(t)
 
 	v := NewVault(l, "transit", key, "latest", "root", "http://vault.container.local.jmpd.in:8200", "")
 	return v

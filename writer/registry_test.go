@@ -8,12 +8,12 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/nicholasjackson/kapsule/builder"
 	"github.com/nicholasjackson/kapsule/crypto/keyproviders"
+	"github.com/nicholasjackson/kapsule/testutils"
 	"github.com/stretchr/testify/require"
 )
 
 func setupRegistry(t *testing.T, ref string) (*OCIRegistry, *log.Logger, v1.Image) {
-	l := log.New(os.Stdout)
-	l.SetLevel(log.DebugLevel)
+	l := testutils.CreateTestLogger(t)
 
 	// create a builder and push to a registry
 	kp := keyproviders.NewFile("../test_fixtures/keys/public.key", "../test_fixtures/keys/private.key")
@@ -28,9 +28,9 @@ func setupRegistry(t *testing.T, ref string) (*OCIRegistry, *log.Logger, v1.Imag
 }
 
 func TestACCPushToRegistry(t *testing.T) {
-	//if os.Getenv("TEST_ACC") != "1" {
-	//	t.Skip("Skipping test as Env var TEST_ACC is not set")
-	//}
+	if os.Getenv("TEST_ACC") != "1" {
+		t.Skip("Skipping test as Env var TEST_ACC is not set")
+	}
 
 	ref := "auth.container.local.jmpd.in:5001/testmodel:plain"
 
@@ -41,9 +41,9 @@ func TestACCPushToRegistry(t *testing.T) {
 }
 
 func TestACCPushEncryptedToRegistry(t *testing.T) {
-	//jif os.Getenv("TEST_ACC") != "1" {
-	//j	t.Skip("Skipping test as Env var TEST_ACC is not set")
-	//j}
+	if os.Getenv("TEST_ACC") != "1" {
+		t.Skip("Skipping test as Env var TEST_ACC is not set")
+	}
 
 	ref := "auth.container.local.jmpd.in:5001/testmodel:enc"
 

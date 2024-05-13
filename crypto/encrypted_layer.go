@@ -2,8 +2,9 @@ package crypto
 
 import (
 	"bytes"
-	"errors"
+	"encoding/hex"
 	"fmt"
+	"hash"
 	"io"
 
 	"github.com/containers/ocicrypt"
@@ -21,8 +22,8 @@ type EncryptedLayer struct {
 	key           []byte
 	encryptConfig *config.EncryptConfig
 	annotations   map[string]string
-	hash          string
-	size          int
+	digest        v1.Hash
+	size          int64
 	done          bool
 }
 
@@ -49,7 +50,7 @@ func NewEncryptedLayer(l v1.Layer, key []byte) (*EncryptedLayer, error) {
 
 func (el *EncryptedLayer) Digest() (v1.Hash, error) {
 	if el.done {
-		return v1.NewHash(fmt.Sprintf("sha256:%s", el.hash))
+		return el.digest, nil
 	}
 
 	// if we have not yet completed the encryption process we cannot get the digest
@@ -69,19 +70,28 @@ func (el *EncryptedLayer) Annotations() (map[string]string, error) {
 }
 
 func (el *EncryptedLayer) DiffID() (v1.Hash, error) {
-	// DiffID of the encrypted layer is not the same as the original layer
-	return el.Digest()
+	// We need to get the DiffID from t he wrapped layer as this is the
+	// unzipped unencrypted hash
+	return el.layer.DiffID()
 }
 
 func (el *EncryptedLayer) Compressed() (io.ReadCloser, error) {
-	// get the compressed layer reader, this will be passed to the encryptor
-	r, err := el.layer.Compressed()
-	if errors.Is(err, stream.ErrConsumed) {
-		return io.NopCloser(bytes.NewReader(nil)), nil
+	if el.done {
+		// with a standard layer we can only compress the data once and if the stream
+		// has been written we should return an error. However with an ecnypted layer
+		// the image is written twice, once with the encrypted data then the manifest
+		// is updated with the encryption details.
+		//
+		// The path writer uses the Digest and the Size to check if a layer has been written
+		// however it also calls Compressed to get the reader even if it does not use it
+		// in this edge case we need to return an empty reader so that the path writer
+		// does not fail second write
+		return io.NopCloser(bytes.NewBuffer(nil)), nil
 	}
 
+	r, err := el.layer.Compressed()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get compressed stream: %s", err)
+		return nil, err
 	}
 
 	// consturct the layer encryptor, the comppressed reader passed to the encryptor
@@ -96,7 +106,7 @@ func (el *EncryptedLayer) Compressed() (io.ReadCloser, error) {
 
 	// create the finalizer that will be called once the reader is closed
 	// this will allow us to set the annotations, digest and size
-	fin := func() error {
+	fin := func(h hash.Hash, count int64) error {
 		// get the annotations from the encrypted layer, this information
 		// is needed in order to decrypt the data later
 		annot, err := efin()
@@ -108,20 +118,13 @@ func (el *EncryptedLayer) Compressed() (io.ReadCloser, error) {
 		el.annotations = annot
 
 		// get the hash of the encrypted data
-		h, err := wr.Hash()
+		digest, err := v1.NewHash("sha256:" + hex.EncodeToString(h.Sum(nil)))
 		if err != nil {
-			return fmt.Errorf("unable to get hash from wrapped reader: %w", err)
+			return fmt.Errorf("unable to create hash from encrypted data: %w", err)
 		}
 
-		el.hash = h
-
-		// get the size of the encrypted data
-		s, err := wr.Size()
-		if err != nil {
-			return fmt.Errorf("unable to get size from wrapped reader: %w", err)
-		}
-
-		el.size = s
+		el.digest = digest
+		el.size = count
 
 		// mark the layer as done
 		el.done = true
@@ -131,7 +134,7 @@ func (el *EncryptedLayer) Compressed() (io.ReadCloser, error) {
 
 	// wrap the encrypted reader with a wrapped reader so that we
 	// can get the hash and the size of the encrypted data
-	wr = newWrappedReader(er, fin)
+	wr = newWrappedReader(io.NopCloser(er), fin)
 
 	// return wrapped reader that will return the encrypted data
 	return wr, nil
@@ -158,4 +161,24 @@ func (el *EncryptedLayer) MediaType() (types.MediaType, error) {
 	}
 
 	return types.MediaType(mt + "+enc"), nil
+}
+
+type wrappedR struct {
+	pr       io.Reader
+	finalize func() error
+}
+
+func (er *wrappedR) Read(b []byte) (int, error) {
+	n, err := er.pr.Read(b)
+	fmt.Println("er.pr.Read(b)", n)
+	return n, err
+}
+
+// Close implements the io.Closer interface.
+func (er *wrappedR) Close() error {
+	if er.finalize != nil {
+		return er.finalize()
+	}
+
+	return nil
 }
