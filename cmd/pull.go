@@ -30,8 +30,8 @@ func newPullCmd() *cobra.Command {
 				logger,
 				encryptionKey,
 				decryptionKey,
-				encryptionVaultPath,
 				encryptionVaultKey,
+				encryptionVaultPath,
 				encryptionVaultAuthToken,
 				encryptionVaultAuthAddr,
 				encryptionVaultAuthNamespace)

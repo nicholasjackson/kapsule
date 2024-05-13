@@ -39,29 +39,18 @@ func (r *OCIRegistry) Write(image v1.Image, imageRef string, decrypt, unzip bool
 		panic(err)
 	}
 
-	b := authn.Basic{
-		Username: r.username,
-		Password: r.password,
-	}
-
-	cfg, err := b.Authorization()
+	// get the auth for the registry
+	auth, err := r.getAuth()
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to get auth: %s", err)
 	}
 
-	// create a custom transport so we can set the insecure flag
-	transport := remote.DefaultTransport
-	if r.insecure {
-		transport.(*http.Transport).TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true,
-		}
-	}
-
-	auth := authn.FromConfig(*cfg)
+	// get the transport setting insecure if needed
+	t := r.getTransport()
 
 	// remote.WithProgress to write the image with progress
 	r.logger.Info("Pushing image", "imageRef", imageRef)
-	err = remote.Write(ref, image, remote.WithAuth(auth), remote.WithProgress(r.progressReport()), remote.WithTransport(transport))
+	err = remote.Write(ref, image, remote.WithAuth(auth), remote.WithProgress(r.progressReport()), remote.WithTransport(t))
 	if err != nil {
 		return fmt.Errorf("unable to write image to registry: %s", err)
 	}
@@ -75,17 +64,13 @@ func (r *OCIRegistry) WriteEncrypted(image v1.Image, imageRef string) error {
 		panic(err)
 	}
 
-	b := authn.Basic{
-		Username: r.username,
-		Password: r.password,
-	}
-
-	cfg, err := b.Authorization()
+	auth, err := r.getAuth()
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to get auth: %s", err)
 	}
 
-	auth := authn.FromConfig(*cfg)
+	// get the transport setting insecure if needed
+	trans := r.getTransport()
 
 	// we need to encrypt the image
 	// we do this by wrapping the image in a layers with an
@@ -102,19 +87,13 @@ func (r *OCIRegistry) WriteEncrypted(image v1.Image, imageRef string) error {
 		return fmt.Errorf("unable to encrypt image: %s", err)
 	}
 
-	// replate the image with the encrypted image
+	// replace the image with the encrypted image
 	image = ei
 
-	transport := remote.DefaultTransport
-	if r.insecure {
-		transport.(*http.Transport).TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true,
-		}
-	}
-
 	// remote.WithProgress to write the image with progress
-	r.logger.Info("Pushing image", "imageRef", imageRef)
-	err = remote.Write(ref, image, remote.WithAuth(auth), remote.WithProgress(r.progressReport()), remote.WithTransport(transport))
+	r.logger.Info("Pushing image", "imageRef", imageRef, "insecure", r.insecure)
+
+	err = remote.Write(ref, image, remote.WithAuth(auth), remote.WithProgress(r.progressReport()), remote.WithTransport(trans))
 	if err != nil {
 		return fmt.Errorf("unable to write image to registry: %s", err)
 	}
@@ -130,7 +109,8 @@ func (r *OCIRegistry) WriteEncrypted(image v1.Image, imageRef string) error {
 	}
 
 	r.logger.Info("Updating remote image", "imageRef", imageRef)
-	err = remote.Write(ref, newImage, remote.WithAuth(auth), remote.WithProgress(r.progressReport()))
+
+	err = remote.Write(ref, newImage, remote.WithAuth(auth), remote.WithProgress(r.progressReport()), remote.WithTransport(trans))
 	if err != nil {
 		return fmt.Errorf("unable to write image to registry: %s", err)
 	}
@@ -155,7 +135,7 @@ func (r *OCIRegistry) progressReport() chan v1.Update {
 		for {
 			update, ok := <-ch
 			if !ok {
-				r.logger.Info("Pushing image complete")
+				r.logger.Info("Image pushed to registry")
 				t.Stop()
 				return
 			}
@@ -179,4 +159,30 @@ func byteCountSI(b int64) string {
 	}
 	return fmt.Sprintf("%.1f %cB",
 		float64(b)/float64(div), "kMGTPE"[exp])
+}
+
+func (r *OCIRegistry) getAuth() (authn.Authenticator, error) {
+	b := authn.Basic{
+		Username: r.username,
+		Password: r.password,
+	}
+
+	cfg, err := b.Authorization()
+	if err != nil {
+		return nil, err
+	}
+
+	return authn.FromConfig(*cfg), nil
+}
+
+func (r *OCIRegistry) getTransport() http.RoundTripper {
+	// create a custom transport so we can set the insecure flag
+	transport := remote.DefaultTransport
+	if r.insecure {
+		transport.(*http.Transport).TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+	}
+
+	return transport
 }

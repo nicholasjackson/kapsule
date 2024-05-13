@@ -8,13 +8,13 @@ import (
 
 	"github.com/nicholasjackson/kapsule/builder"
 	"github.com/nicholasjackson/kapsule/crypto/keyproviders"
+	"github.com/nicholasjackson/kapsule/testutils"
 	"github.com/nicholasjackson/kapsule/writer"
 	"github.com/stretchr/testify/require"
 )
 
 func setupRegistry(t *testing.T, ref string) (*OCIRegistry, *log.Logger) {
-	l := log.New(os.Stdout)
-	l.SetLevel(log.DebugLevel)
+	l := testutils.CreateTestLogger(t)
 
 	// create a builder and push to a registry
 	kp := keyproviders.NewFile("../test_fixtures/testmodel/public.key", "../test_fixtures/testmodel/private.key")

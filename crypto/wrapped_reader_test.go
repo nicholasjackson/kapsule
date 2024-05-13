@@ -2,6 +2,8 @@ package crypto
 
 import (
 	"bytes"
+	"encoding/hex"
+	"hash"
 	"io"
 	"testing"
 
@@ -9,9 +11,9 @@ import (
 )
 
 func TestWrappedReaderReadsBase(t *testing.T) {
-	r := bytes.NewReader([]byte("hello world"))
+	r := io.NopCloser(bytes.NewReader([]byte("hello world")))
 
-	wr := newWrappedReader(r, func() error { return nil })
+	wr := newWrappedReader(r, func(h hash.Hash, count int64) error { return nil })
 
 	d, err := io.ReadAll(wr)
 	require.NoError(t, err)
@@ -19,45 +21,33 @@ func TestWrappedReaderReadsBase(t *testing.T) {
 }
 
 func TestWrappedReaderHashesBaseStream(t *testing.T) {
-	r := bytes.NewReader([]byte("hello world"))
+	r := io.NopCloser(bytes.NewReader([]byte("hello world")))
 
-	wr := newWrappedReader(r, func() error { return nil })
+	var returnedHash hash.Hash
+	wr := newWrappedReader(r, func(h hash.Hash, count int64) error {
+		returnedHash = h
+		return nil
+	})
 
 	_, err := io.ReadAll(wr)
 	require.NoError(t, err)
 
-	h, err := wr.Hash()
 	require.NoError(t, err)
-	require.Equal(t, "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", h)
+	require.Equal(t, "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", hex.EncodeToString(returnedHash.Sum(nil)))
 }
 
 func TestWrappedReaderCalculatesLength(t *testing.T) {
-	r := bytes.NewReader([]byte("hello world"))
+	r := io.NopCloser(bytes.NewReader([]byte("hello world")))
 
-	wr := newWrappedReader(r, func() error { return nil })
+	var s int64
+	wr := newWrappedReader(r, func(h hash.Hash, count int64) error {
+		s = count
+		return nil
+	})
 
 	_, err := io.ReadAll(wr)
 	require.NoError(t, err)
 
-	s, err := wr.Size()
 	require.NoError(t, err)
-	require.Equal(t, 11, s)
-}
-
-func TestWrappedReaderReturnsErrorForSizeWhenStreamNotRead(t *testing.T) {
-	r := bytes.NewReader([]byte("hello world"))
-
-	wr := newWrappedReader(r, func() error { return nil })
-
-	_, err := wr.Size()
-	require.Error(t, err)
-}
-
-func TestWrappedReaderReturnsErrorForHashWhenStreamNotRead(t *testing.T) {
-	r := bytes.NewReader([]byte("hello world"))
-
-	wr := newWrappedReader(r, func() error { return nil })
-
-	_, err := wr.Hash()
-	require.Error(t, err)
+	require.Equal(t, int64(11), s)
 }
