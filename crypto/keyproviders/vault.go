@@ -79,8 +79,12 @@ func (kp *Vault) getVaultKey(keyType string) ([]byte, error) {
 
 	kp.logger.Debug("Sending request to Vault", "path", path)
 
-	// add the token to the request
-	r.Header.Add("X-Vault-Token", kp.authToken)
+	// add the token to the request if the token is set
+	// we might be using an authenticated proxy so if there is no token
+	// we don't add it
+	if kp.authToken != "" {
+		r.Header.Add("X-Vault-Token", kp.authToken)
+	}
 
 	// send the request
 	resp, err := http.DefaultClient.Do(r)
