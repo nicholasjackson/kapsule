@@ -28,15 +28,15 @@ func getKeyProvider(
 		return nil, fmt.Errorf("cannot specify both encryption key and vault key")
 	}
 
-	if encryptionVaultKey != "" && (encryptionVaultAuthAddr == "" || encryptionVaultAuthToken == "" || encryptionVaultPath == "") {
-		return nil, fmt.Errorf("you must specify the vault address, token, transit path and keyname when using a vault key")
+	if encryptionVaultKey != "" && (encryptionVaultAuthAddr == "" || encryptionVaultPath == "") {
+		return nil, fmt.Errorf("you must specify the vault address, transit path, and keyname when using a vault key")
 	}
 
 	if publicKey != "" || privateKey != "" {
 		return keyproviders.NewFile(publicKey, privateKey), nil
 	}
 
-	if encryptionVaultPath != "" && encryptionVaultKey != "" && encryptionVaultAuthToken != "" && encryptionVaultAuthAddr != "" {
+	if encryptionVaultPath != "" && encryptionVaultKey != "" && encryptionVaultAuthAddr != "" {
 		return keyproviders.NewVault(l, encryptionVaultPath, encryptionVaultKey, "", encryptionVaultAuthToken, encryptionVaultAuthAddr, encryptionVaultAuthNamespace), nil
 	}
 
